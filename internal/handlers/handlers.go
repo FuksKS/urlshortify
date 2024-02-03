@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	defaultShortUrlId = "EwHXdJfB"
-	defaultLongUrl    = "https://practicum.yandex.ru/"
-	DefaultAddr       = ":8080"
-	defaultHost       = "http://localhost" + DefaultAddr + "/"
+	DefaultAddr = ":8080"
+	defaultHost = "http://localhost" + DefaultAddr + "/"
 )
+
+var storage = make(map[string]string)
 
 func Shortify(GetUrlId http.Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -29,23 +29,24 @@ func Shortify(GetUrlId http.Handler) func(w http.ResponseWriter, r *http.Request
 
 		*/
 
-		_, err := io.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Reading request body error", http.StatusInternalServerError)
 			return
 		}
 
+		shortUrl := calculateHash(string(body))
+		storage[shortUrl] = string(body)
+
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
 
-		w.Write([]byte(defaultHost + defaultShortUrlId))
+		w.Write([]byte(defaultHost + shortUrl))
 		return
 	}
 }
 
 func GetUrlId(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Hello", "Fuks")
-	w.Header().Set("Location", defaultLongUrl)
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -64,9 +65,8 @@ func GetUrlId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusTemporaryRedirect)
-
-	if id == defaultShortUrlId {
-		w.Header().Set("Location", defaultLongUrl)
+	if longUrl, ok := storage[id]; ok {
+		w.Header().Set("Location", longUrl)
 		return
 	}
 
