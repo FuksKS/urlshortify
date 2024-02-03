@@ -20,11 +20,14 @@ func Shortify(GetUrlId http.Handler) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		contentType := r.Header.Get("Content-Type")
-		if contentType != "text/plain" {
-			http.Error(w, "Unsupported content type", http.StatusUnsupportedMediaType)
-			return
-		}
+		/*
+			contentType := r.Header.Get("Content-Type")
+			if contentType != "text/plain" {
+				http.Error(w, "Unsupported content type", http.StatusUnsupportedMediaType)
+				return
+			}
+
+		*/
 
 		_, err := io.ReadAll(r.Body)
 		if err != nil {
