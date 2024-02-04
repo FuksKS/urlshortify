@@ -13,7 +13,7 @@ func main() {
 		case http.MethodGet:
 			handlers.GetURLID(w, r)
 		case http.MethodPost:
-			handlers.GenerateShortUrl(w, r)
+			handlers.GenerateShortURL(w, r)
 		default:
 			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 		}

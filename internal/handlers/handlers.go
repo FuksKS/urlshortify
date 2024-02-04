@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -32,16 +32,16 @@ func GetURLID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if longUrl, ok := storage[id]; ok {
-		fmt.Println("longUrl: ", longUrl)
-		http.Redirect(w, r, longUrl, http.StatusTemporaryRedirect)
+	if longURL, ok := storage[id]; ok {
+		fmt.Println("longUrl: ", longURL)
+		http.Redirect(w, r, longURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	http.Error(w, "Bad request", http.StatusBadRequest)
 }
 
-func GenerateShortUrl(w http.ResponseWriter, r *http.Request) {
+func GenerateShortURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -55,17 +55,16 @@ func GenerateShortUrl(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Reading request body error", http.StatusInternalServerError)
 		return
 	}
 
-	shortUrl := calculateHash(string(body))
-	storage[shortUrl] = string(body)
+	shortURL := calculateHash(string(body))
+	storage[shortURL] = string(body)
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "%s%s", defaultHost, shortUrl)
+	fmt.Fprintf(w, "%s%s", defaultHost, shortURL)
 }
