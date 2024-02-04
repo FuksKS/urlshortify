@@ -2,22 +2,15 @@ package main
 
 import (
 	"github.com/FuksKS/urlshortify/internal/handlers"
+	"github.com/FuksKS/urlshortify/internal/storage"
 	"net/http"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	st := storage.New()
 
-	mux.HandleFunc(`/`, func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handlers.GetURLID(w, r)
-		case http.MethodPost:
-			handlers.GenerateShortURL(w, r)
-		default:
-			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	mux := http.NewServeMux()
+	mux.HandleFunc(`/`, handlers.RootHandler(st))
 
 	err := http.ListenAndServe(handlers.DefaultAddr, mux)
 	if err != nil {
