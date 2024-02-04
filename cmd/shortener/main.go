@@ -8,7 +8,16 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(`/`, handlers.Shortify(http.HandlerFunc(handlers.GetUrlId)))
+	mux.HandleFunc(`/`, func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handlers.GetURLID(w, r)
+		case http.MethodPost:
+			handlers.GenerateShortUrl(w, r)
+		default:
+			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	err := http.ListenAndServe(handlers.DefaultAddr, mux)
 	if err != nil {

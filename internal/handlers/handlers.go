@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"io"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -13,40 +14,7 @@ const (
 
 var storage = make(map[string]string)
 
-func Shortify(GetUrlId http.Handler) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			GetUrlId.ServeHTTP(w, r)
-			return
-		}
-
-		/*
-			contentType := r.Header.Get("Content-Type")
-			if contentType != "text/plain" {
-				http.Error(w, "Unsupported content type", http.StatusUnsupportedMediaType)
-				return
-			}
-
-		*/
-
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Reading request body error", http.StatusInternalServerError)
-			return
-		}
-
-		shortUrl := calculateHash(string(body))
-		storage[shortUrl] = string(body)
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusCreated)
-
-		w.Write([]byte(defaultHost + shortUrl))
-		return
-	}
-}
-
-func GetUrlId(w http.ResponseWriter, r *http.Request) {
+func GetURLID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -64,13 +32,40 @@ func GetUrlId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusTemporaryRedirect)
 	if longUrl, ok := storage[id]; ok {
-		w.Header().Set("Location", longUrl)
+		fmt.Println("longUrl: ", longUrl)
+		http.Redirect(w, r, longUrl, http.StatusTemporaryRedirect)
 		return
 	}
 
-	w.Header().Set("Location", defaultHost+id)
+	http.Error(w, "Bad request", http.StatusBadRequest)
+}
 
-	return
+func GenerateShortUrl(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	/*
+		contentType := r.Header.Get("Content-Type")
+		if contentType != "text/plain" {
+			http.Error(w, "Unsupported content type", http.StatusUnsupportedMediaType)
+			return
+		}
+	*/
+
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Reading request body error", http.StatusInternalServerError)
+		return
+	}
+
+	shortUrl := calculateHash(string(body))
+	storage[shortUrl] = string(body)
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "%s%s", defaultHost, shortUrl)
 }
