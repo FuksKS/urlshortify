@@ -23,7 +23,9 @@ func (s *Storage) SaveShortURL(input string) string {
 	hashString := hex.EncodeToString(hash[:])
 
 	shortURL := hashString[:8]
-	s.cashe[shortURL] = input
+	if _, ok := s.cashe[shortURL]; !ok {
+		s.cashe[shortURL] = input
+	}
 
 	return shortURL
 }

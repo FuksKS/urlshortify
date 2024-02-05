@@ -13,7 +13,7 @@ const (
 	defaultHost = "http://localhost" + DefaultAddr + "/"
 )
 
-func RootHandler(storage storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+func RootHandler(storage storage.Storager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
