@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/storage"
+	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 	"strings"
@@ -13,6 +14,7 @@ const (
 	defaultHost = "http://localhost" + DefaultAddr + "/"
 )
 
+/*
 func RootHandler(storage storage.Storager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -24,6 +26,19 @@ func RootHandler(storage storage.Storager) http.HandlerFunc {
 			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 		}
 	}
+}
+
+*/
+
+func RootHandler() chi.Router {
+	st := storage.New()
+
+	r := chi.NewRouter()
+
+	r.Post("/", generateShortURL(st))
+	r.Get("/{id}", getURLID(st))
+
+	return r
 }
 
 func getURLID(st storage.Storager) http.HandlerFunc {
