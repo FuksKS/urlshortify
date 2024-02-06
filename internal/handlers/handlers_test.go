@@ -96,6 +96,8 @@ func TestRouter(t *testing.T) {
 
 	for _, tt := range tests {
 		resp, get := testRequest(t, ts, tt.method, tt.path, tt.body)
+		resp.Body.Close()
+
 		assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 		assert.Equal(t, tt.want.respBody, get)
 	}
