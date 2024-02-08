@@ -14,10 +14,10 @@ const (
 	defaultHost = "http://localhost" + DefaultAddr + "/"
 )
 
-func RootHandler(addr, defaultShortUrl string) chi.Router {
+func RootHandler(addr, defaultShortURL string) chi.Router {
 	st := storage.New()
 
-	st.SaveDefaultURL(addr, defaultShortUrl)
+	st.SaveDefaultURL(addr, defaultShortURL)
 
 	r := chi.NewRouter()
 

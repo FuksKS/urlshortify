@@ -35,7 +35,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func TestRouter(t *testing.T) {
-	ts := httptest.NewServer(RootHandler("a", "b"))
+	ts := httptest.NewServer(RootHandler("localhost:8080/", "b"))
 	defer ts.Close()
 
 	type want struct {
@@ -67,31 +67,6 @@ func TestRouter(t *testing.T) {
 				respBody:    defaultHost + stor.SaveShortURL(practicumHost),
 			},
 		},
-		/*
-			{
-				name:   "simple GET test",
-				method: http.MethodGet,
-				path:   "/" + stor.SaveShortURL(practicumHost),
-				st:     stor,
-				want: want{
-					statusCode: http.StatusTemporaryRedirect,
-					location:   practicumHost,
-					respBody:   "",
-				},
-			},
-			/*
-				{
-					name:   "wrong method test",
-					method: http.MethodDelete,
-					path:   "/",
-					st:     stor,
-					want: want{
-						statusCode: http.StatusMethodNotAllowed,
-						respBody:   "Method not Allowed\n",
-					},
-				},
-
-		*/
 	}
 
 	for _, tt := range tests {
@@ -150,7 +125,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := generateShortURL(tt.st, "http://localhost:8080/")
+			h := generateShortURL(tt.st, "localhost:8080/")
 			h(w, request)
 
 			result := w.Result()

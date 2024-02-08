@@ -8,7 +8,7 @@ type Config struct {
 }
 
 func InitConfig() *Config {
-	httpAddr := flag.String("a", "localhost:8080/", "адрес запуска HTTP-сервера")
+	httpAddr := flag.String("a", "localhost:8080", "адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "http://localhost:8000/qsd54gFg", "базовый адрес результирующего сокращенного URL")
 	flag.Parse()
 
