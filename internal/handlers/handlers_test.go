@@ -35,7 +35,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func TestRouter(t *testing.T) {
-	ts := httptest.NewServer(RootHandler())
+	ts := httptest.NewServer(RootHandler("a", "b"))
 	defer ts.Close()
 
 	type want struct {

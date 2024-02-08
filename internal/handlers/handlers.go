@@ -14,24 +14,10 @@ const (
 	defaultHost = "http://localhost" + DefaultAddr + "/"
 )
 
-/*
-func RootHandler(storage storage.Storager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			getURLID(storage).ServeHTTP(w, r)
-		case http.MethodPost:
-			generateShortURL(storage).ServeHTTP(w, r)
-		default:
-			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-*/
-
-func RootHandler() chi.Router {
+func RootHandler(addr, defaultShortUrl string) chi.Router {
 	st := storage.New()
+
+	st.SaveDefaultURL(addr, defaultShortUrl)
 
 	r := chi.NewRouter()
 

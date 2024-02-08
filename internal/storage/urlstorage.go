@@ -34,6 +34,10 @@ func (s *Storage) GetLongURL(shortURL string) string {
 	return s.cashe[shortURL]
 }
 
+func (s *Storage) SaveDefaultURL(defaultURL, shortDefaultURL string) {
+	s.cashe[shortDefaultURL] = defaultURL
+}
+
 type Storager interface {
 	GetLongURL(shortURL string) string
 	SaveShortURL(input string) string
