@@ -80,6 +80,6 @@ func generateShortURL(st storage.Storager, addr string) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "http://%s%s", addr, shortURL)
+		fmt.Fprintf(w, "http://%s/%s", addr, shortURL)
 	}
 }

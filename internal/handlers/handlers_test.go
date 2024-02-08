@@ -35,7 +35,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func TestRouter(t *testing.T) {
-	ts := httptest.NewServer(RootHandler("localhost:8080/", "b"))
+	ts := httptest.NewServer(RootHandler("localhost:8080", "b"))
 	defer ts.Close()
 
 	type want struct {
@@ -125,7 +125,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := generateShortURL(tt.st, "localhost:8080/")
+			h := generateShortURL(tt.st, "localhost:8080")
 			h(w, request)
 
 			result := w.Result()
