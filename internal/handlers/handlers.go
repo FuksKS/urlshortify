@@ -21,7 +21,7 @@ func RootHandler(addr, defaultShortUrl string) chi.Router {
 
 	r := chi.NewRouter()
 
-	r.Post("/", generateShortURL(st))
+	r.Post("/", generateShortURL(st, addr))
 	r.Get("/{id}", getURLID(st))
 
 	return r
@@ -55,7 +55,7 @@ func getURLID(st storage.Storager) http.HandlerFunc {
 	}
 }
 
-func generateShortURL(st storage.Storager) http.HandlerFunc {
+func generateShortURL(st storage.Storager, addr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
@@ -80,6 +80,6 @@ func generateShortURL(st storage.Storager) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "%s%s", defaultHost, shortURL)
+		fmt.Fprintf(w, "http://%s%s", addr, shortURL)
 	}
 }

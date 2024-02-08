@@ -150,7 +150,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := generateShortURL(tt.st)
+			h := generateShortURL(tt.st, "http://localhost:8080/")
 			h(w, request)
 
 			result := w.Result()
