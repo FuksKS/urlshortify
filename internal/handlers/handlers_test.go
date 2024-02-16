@@ -91,7 +91,7 @@ func Test_generateShortURL(t *testing.T) {
 	s := storage.New()
 	handler := URLHandler{
 		storage:  s,
-		HttpAddr: config.DefaultAddr,
+		HTTPAddr: config.DefaultAddr,
 	}
 
 	tests := []struct {
@@ -132,7 +132,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := handler.generateShortURL(handler.HttpAddr)
+			h := handler.generateShortURL(handler.HTTPAddr)
 			h(w, request)
 
 			result := w.Result()
@@ -158,7 +158,7 @@ func Test_getURLID(t *testing.T) {
 	s := storage.New()
 	handler := URLHandler{
 		storage:  s,
-		HttpAddr: config.DefaultAddr,
+		HTTPAddr: config.DefaultAddr,
 	}
 
 	tests := []struct {

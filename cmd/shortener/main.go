@@ -9,7 +9,7 @@ func main() {
 
 	handler := handlers.New()
 
-	err := http.ListenAndServe(handler.HttpAddr, handler.RootHandler())
+	err := http.ListenAndServe(handler.HTTPAddr, handler.RootHandler())
 	if err != nil {
 		panic(err)
 	}

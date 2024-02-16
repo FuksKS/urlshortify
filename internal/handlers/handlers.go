@@ -12,7 +12,7 @@ import (
 
 type URLHandler struct {
 	storage  storage.Storager
-	HttpAddr string
+	HTTPAddr string
 }
 
 func New() *URLHandler {
@@ -24,7 +24,7 @@ func New() *URLHandler {
 
 	return &URLHandler{
 		storage:  st,
-		HttpAddr: cfg.HTTPAddr,
+		HTTPAddr: cfg.HTTPAddr,
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *URLHandler) RootHandler() chi.Router {
 
 	r := chi.NewRouter()
 
-	r.Post("/", h.generateShortURL(h.HttpAddr))
+	r.Post("/", h.generateShortURL(h.HTTPAddr))
 	r.Get("/{id}", h.getURLID())
 
 	return r
