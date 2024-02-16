@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,11 +12,12 @@ import (
 	"testing"
 )
 
-var practicumHost = "https://practicum.yandex.ru/"
+const (
+	practicumHost = "https://practicum.yandex.ru/"
+	defaultHost   = "http://" + config.DefaultAddr + "/"
+)
 
-func testRequest(t *testing.T, ts *httptest.Server, method,
-	path, body string) (*http.Response, string) {
-
+func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
 	var reqBody io.Reader = nil
 	if method == http.MethodPost {
 		reqBody = strings.NewReader(body)
@@ -35,7 +37,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func TestRouter(t *testing.T) {
-	ts := httptest.NewServer(RootHandler("localhost:8080", "b"))
+	handler := New()
+	ts := httptest.NewServer(handler.RootHandler())
 	defer ts.Close()
 
 	type want struct {
@@ -85,7 +88,11 @@ func Test_generateShortURL(t *testing.T) {
 		respBody    string
 	}
 
-	stor := storage.New()
+	s := storage.New()
+	handler := URLHandler{
+		storage:  s,
+		HttpAddr: config.DefaultAddr,
+	}
 
 	tests := []struct {
 		name   string
@@ -99,19 +106,19 @@ func Test_generateShortURL(t *testing.T) {
 			name:   "simple test",
 			method: http.MethodPost,
 			path:   "/",
-			st:     stor,
+			st:     handler.storage,
 			body:   practicumHost,
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + stor.SaveShortURL(practicumHost),
+				respBody:    defaultHost + handler.storage.SaveShortURL(practicumHost),
 			},
 		},
 		{
 			name:   "simple test",
 			method: http.MethodHead,
 			path:   "/",
-			st:     stor,
+			st:     handler.storage,
 			body:   practicumHost,
 			want: want{
 				statusCode:  http.StatusMethodNotAllowed,
@@ -125,7 +132,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := generateShortURL(tt.st, "localhost:8080")
+			h := handler.generateShortURL(handler.HttpAddr)
 			h(w, request)
 
 			result := w.Result()
@@ -148,7 +155,11 @@ func Test_getURLID(t *testing.T) {
 		location   string
 	}
 
-	stor := storage.New()
+	s := storage.New()
+	handler := URLHandler{
+		storage:  s,
+		HttpAddr: config.DefaultAddr,
+	}
 
 	tests := []struct {
 		name    string
@@ -160,8 +171,8 @@ func Test_getURLID(t *testing.T) {
 		{
 			name:    "simple test",
 			method:  http.MethodGet,
-			request: "/" + stor.SaveShortURL(practicumHost),
-			st:      stor,
+			request: "/" + handler.storage.SaveShortURL(practicumHost),
+			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusTemporaryRedirect,
 				location:   practicumHost,
@@ -171,7 +182,7 @@ func Test_getURLID(t *testing.T) {
 			name:    "Unknown request",
 			method:  http.MethodGet,
 			request: "/abc",
-			st:      stor,
+			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusBadRequest,
 				location:   "",
@@ -181,7 +192,7 @@ func Test_getURLID(t *testing.T) {
 			name:    "Wrong method",
 			method:  http.MethodDelete,
 			request: "/abc",
-			st:      stor,
+			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusMethodNotAllowed,
 				location:   "",
@@ -191,7 +202,7 @@ func Test_getURLID(t *testing.T) {
 			name:    "Wrong path /abc/",
 			method:  http.MethodGet,
 			request: "/abc/",
-			st:      stor,
+			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusBadRequest,
 				location:   "",
@@ -201,9 +212,9 @@ func Test_getURLID(t *testing.T) {
 			name:    "Wrong path /",
 			method:  http.MethodGet,
 			request: "/",
-			st:      stor,
+			st:      handler.storage,
 			want: want{
-				statusCode: http.StatusMethodNotAllowed,
+				statusCode: http.StatusBadRequest,
 				location:   "",
 			},
 		},
@@ -213,7 +224,7 @@ func Test_getURLID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.request, nil)
 			w := httptest.NewRecorder()
-			h := getURLID(tt.st)
+			h := handler.getURLID()
 			h(w, request)
 
 			result := w.Result()
