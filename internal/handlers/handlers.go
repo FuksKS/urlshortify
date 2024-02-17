@@ -45,7 +45,7 @@ func (h *URLHandler) generateShortURL() http.HandlerFunc {
 		}
 
 		longURL := string(body)
-		shortURL := urlmaker.MakeShortUrl(longURL)
+		shortURL := urlmaker.MakeShortURL(longURL)
 		h.storage.SaveShortURL(shortURL, longURL)
 
 		w.Header().Set("Content-Type", "text/plain")

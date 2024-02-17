@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 )
 
-func MakeShortUrl(input string) string {
+func MakeShortURL(input string) string {
 	inputBytes := []byte(input)
 
 	// Вычисление хэша с использованием SHA-256

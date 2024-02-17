@@ -67,7 +67,7 @@ func TestRouter(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + urlmaker.MakeShortUrl(practicumHost),
+				respBody:    defaultHost + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 	}
@@ -111,7 +111,7 @@ func Test_generateShortURL(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + urlmaker.MakeShortUrl(practicumHost),
+				respBody:    defaultHost + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 		{
@@ -171,7 +171,7 @@ func Test_getURLID(t *testing.T) {
 		{
 			name:    "simple test",
 			method:  http.MethodGet,
-			request: "/" + urlmaker.MakeShortUrl(practicumHost),
+			request: "/" + urlmaker.MakeShortURL(practicumHost),
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusTemporaryRedirect,
@@ -220,7 +220,7 @@ func Test_getURLID(t *testing.T) {
 		},
 	}
 
-	handler.storage.SaveShortURL(urlmaker.MakeShortUrl(practicumHost), practicumHost)
+	handler.storage.SaveShortURL(urlmaker.MakeShortURL(practicumHost), practicumHost)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
