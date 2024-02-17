@@ -1,15 +1,20 @@
 package main
 
 import (
+	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/handlers"
+	"github.com/FuksKS/urlshortify/internal/storage"
 	"net/http"
 )
 
 func main() {
 
-	handler := handlers.New()
+	st := storage.New()
+	cfg := config.InitConfig()
 
-	err := http.ListenAndServe(handler.HTTPAddr, handler.RootHandler())
+	handler := handlers.New(st, cfg.HTTPAddr, cfg.HTTPAddr)
+
+	err := http.ListenAndServe(handler.HTTPAddr, handler.InitRouter())
 	if err != nil {
 		panic(err)
 	}

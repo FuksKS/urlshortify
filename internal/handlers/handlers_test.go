@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/storage"
+	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -14,7 +14,8 @@ import (
 
 const (
 	practicumHost = "https://practicum.yandex.ru/"
-	defaultHost   = "http://" + config.DefaultAddr + "/"
+	defaultAddr   = "localhost:8080"
+	defaultHost   = "http://" + defaultAddr + "/"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -37,8 +38,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 }
 
 func TestRouter(t *testing.T) {
-	handler := New()
-	ts := httptest.NewServer(handler.RootHandler())
+	st := storage.New()
+	handler := New(st, defaultAddr, "a")
+	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
 	type want struct {
@@ -48,26 +50,24 @@ func TestRouter(t *testing.T) {
 		respBody    string
 	}
 
-	stor := storage.New()
-
 	tests := []struct {
 		name   string
 		method string
 		path   string
 		body   string
-		st     storage.Storager
+		st     Storager
 		want   want
 	}{
 		{
 			name:   "simple POST test",
 			method: http.MethodPost,
 			path:   "/",
-			st:     stor,
+			st:     st,
 			body:   practicumHost,
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + stor.SaveShortURL(practicumHost),
+				respBody:    defaultHost + urlmaker.MakeShortUrl(practicumHost),
 			},
 		},
 	}
@@ -88,10 +88,10 @@ func Test_generateShortURL(t *testing.T) {
 		respBody    string
 	}
 
-	s := storage.New()
+	st := storage.New()
 	handler := URLHandler{
-		storage:  s,
-		HTTPAddr: config.DefaultAddr,
+		storage:  st,
+		HTTPAddr: defaultAddr,
 	}
 
 	tests := []struct {
@@ -99,7 +99,7 @@ func Test_generateShortURL(t *testing.T) {
 		method string
 		path   string
 		body   string
-		st     storage.Storager
+		st     Storager
 		want   want
 	}{
 		{
@@ -111,7 +111,7 @@ func Test_generateShortURL(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + handler.storage.SaveShortURL(practicumHost),
+				respBody:    defaultHost + urlmaker.MakeShortUrl(practicumHost),
 			},
 		},
 		{
@@ -132,7 +132,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := handler.generateShortURL(handler.HTTPAddr)
+			h := handler.generateShortURL()
 			h(w, request)
 
 			result := w.Result()
@@ -158,20 +158,20 @@ func Test_getURLID(t *testing.T) {
 	s := storage.New()
 	handler := URLHandler{
 		storage:  s,
-		HTTPAddr: config.DefaultAddr,
+		HTTPAddr: defaultAddr,
 	}
 
 	tests := []struct {
 		name    string
 		method  string
 		request string
-		st      storage.Storager
+		st      Storager
 		want    want
 	}{
 		{
 			name:    "simple test",
 			method:  http.MethodGet,
-			request: "/" + handler.storage.SaveShortURL(practicumHost),
+			request: "/" + urlmaker.MakeShortUrl(practicumHost),
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusTemporaryRedirect,
@@ -219,6 +219,8 @@ func Test_getURLID(t *testing.T) {
 			},
 		},
 	}
+
+	handler.storage.SaveShortURL(urlmaker.MakeShortUrl(practicumHost), practicumHost)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

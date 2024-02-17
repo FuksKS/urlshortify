@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DefaultAddr    = "localhost:8080"
+	defaultAddr    = "localhost:8080"
 	defaultBaseURL = "http://localhost:8000/qsd54gFg"
 )
 
@@ -18,15 +18,11 @@ type Config struct {
 
 func InitConfig() *Config {
 	var cfg Config
-	err := env.Parse(&cfg)
-	if err != nil {
+	if err := envConfig(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
-	var flagAddr, flagBaseURL string
-	flag.StringVar(&flagAddr, "a", DefaultAddr, "адрес запуска HTTP-сервера")
-	flag.StringVar(&flagBaseURL, "b", defaultBaseURL, "базовый адрес результирующего сокращенного URL")
-	flag.Parse()
+	flagAddr, flagBaseURL := flagConfig()
 
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = flagAddr
@@ -36,4 +32,18 @@ func InitConfig() *Config {
 	}
 
 	return &cfg
+}
+
+func flagConfig() (flagAddr, flagBaseURL string) {
+	flag.StringVar(&flagAddr, "a", defaultAddr, "адрес запуска HTTP-сервера")
+	flag.StringVar(&flagBaseURL, "b", defaultBaseURL, "базовый адрес результирующего сокращенного URL")
+	flag.Parse()
+	return
+}
+
+func envConfig(cfg *Config) error {
+	if err := env.Parse(cfg); err != nil {
+		return err
+	}
+	return nil
 }

@@ -2,41 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/FuksKS/urlshortify/internal/config"
-	"github.com/FuksKS/urlshortify/internal/storage"
-	"github.com/go-chi/chi/v5"
+	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"io"
 	"net/http"
 	"strings"
 )
-
-type URLHandler struct {
-	storage  storage.Storager
-	HTTPAddr string
-}
-
-func New() *URLHandler {
-	st := storage.New()
-
-	cfg := config.InitConfig()
-
-	st.SaveDefaultURL(cfg.HTTPAddr, cfg.BaseURL)
-
-	return &URLHandler{
-		storage:  st,
-		HTTPAddr: cfg.HTTPAddr,
-	}
-}
-
-func (h *URLHandler) RootHandler() chi.Router {
-
-	r := chi.NewRouter()
-
-	r.Post("/", h.generateShortURL(h.HTTPAddr))
-	r.Get("/{id}", h.getURLID())
-
-	return r
-}
 
 func (h *URLHandler) getURLID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +16,9 @@ func (h *URLHandler) getURLID() http.HandlerFunc {
 		}
 
 		parts := strings.Split(r.URL.Path, "/") // parts[0] == ""
+		if len(parts) != 2 {
+			http.Error(w, "Incorrect path", http.StatusBadRequest)
+		}
 		id := parts[1]
 
 		if longURL := h.storage.GetLongURL(id); longURL != "" {
@@ -54,11 +27,11 @@ func (h *URLHandler) getURLID() http.HandlerFunc {
 		}
 
 		// урла нет в хранилище
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Unknown short URL", http.StatusBadRequest)
 	}
 }
 
-func (h *URLHandler) generateShortURL(addr string) http.HandlerFunc {
+func (h *URLHandler) generateShortURL() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
@@ -71,10 +44,14 @@ func (h *URLHandler) generateShortURL(addr string) http.HandlerFunc {
 			return
 		}
 
-		shortURL := h.storage.SaveShortURL(string(body))
+		longURL := string(body)
+		shortURL := urlmaker.MakeShortUrl(longURL)
+		h.storage.SaveShortURL(shortURL, longURL)
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "http://%s/%s", addr, shortURL)
+
+		resp := fmt.Sprintf("http://%s/%s", h.HTTPAddr, shortURL)
+		w.Write([]byte(resp))
 	}
 }
