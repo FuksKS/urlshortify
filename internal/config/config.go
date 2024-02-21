@@ -16,7 +16,7 @@ type Config struct {
 	BaseURL  string `env:"BASE_URL"`
 }
 
-func InitConfig() *Config {
+func Init() *Config {
 	var cfg Config
 	if err := envConfig(&cfg); err != nil {
 		log.Fatal(err)
