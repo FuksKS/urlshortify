@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/stretchr/testify/assert"
@@ -234,6 +235,62 @@ func Test_getURLID(t *testing.T) {
 
 			assert.Equal(t, tt.want.statusCode, result.StatusCode)
 			assert.Equal(t, tt.want.location, result.Header.Get("Location"))
+		})
+	}
+}
+
+func Test_shorten(t *testing.T) {
+	type want struct {
+		statusCode  int
+		contentType string
+		respBody    string
+	}
+
+	st := storage.New()
+	handler := URLHandler{
+		storage:  st,
+		HTTPAddr: defaultAddr,
+	}
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+		st     Storager
+		want   want
+	}{
+		{
+			name:   "simple test",
+			method: http.MethodPost,
+			path:   "/api/shorten",
+			st:     handler.storage,
+			body:   fmt.Sprintf(`{"url":"%s"}`, practicumHost),
+			want: want{
+				statusCode:  http.StatusCreated,
+				contentType: "application/json",
+				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultHost+urlmaker.MakeShortURL(practicumHost)),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+			h := handler.shorten()
+			h(w, request)
+
+			result := w.Result()
+			defer result.Body.Close()
+
+			assert.Equal(t, tt.want.statusCode, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.respBody, string(body))
 		})
 	}
 }

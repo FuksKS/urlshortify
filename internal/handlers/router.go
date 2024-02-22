@@ -24,6 +24,7 @@ func (h *URLHandler) InitRouter() chi.Router {
 
 	r.Post("/", withLogging(h.generateShortURL()))
 	r.Get("/{id}", withLogging(h.getURLID()))
+	r.Post("/api/shorten", withLogging(h.shorten()))
 
 	return r
 }
