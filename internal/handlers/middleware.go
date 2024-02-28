@@ -65,7 +65,7 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
 		logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
-		if contentType != "application/json" && contentType != "text/html" && contentType != "text/plain" {
+		if contentType != "application/json" && contentType != "text/html" {
 			h.ServeHTTP(w, r)
 			return
 		}
