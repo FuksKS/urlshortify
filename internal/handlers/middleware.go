@@ -3,7 +3,6 @@ package handlers
 import (
 	"github.com/FuksKS/urlshortify/internal/logger"
 	"go.uber.org/zap"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -100,12 +99,6 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 			// меняем тело запроса на новое
-			newBody, err := io.ReadAll(cr)
-			if err != nil {
-				logger.Log.Error("withGzip middleware", zap.String("Reading request newBody error", err.Error()))
-				return
-			}
-			logger.Log.Info("withGzip middleware", zap.String("new body (if it was gzip)", string(newBody)))
 			r.Body = cr
 			defer cr.Close()
 		}
