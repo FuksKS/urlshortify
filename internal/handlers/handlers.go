@@ -32,6 +32,16 @@ func (h *URLHandler) getURLID() http.HandlerFunc {
 			return
 		}
 
+		longURL, err := h.fileReader.ReadFromFile(id)
+		if err != nil {
+			http.Error(w, "Read from File storage error", http.StatusInternalServerError)
+		}
+
+		if longURL != "" {
+			http.Redirect(w, r, longURL, http.StatusTemporaryRedirect)
+			return
+		}
+
 		// урла нет в хранилище
 		http.Error(w, "Unknown short URL", http.StatusBadRequest)
 	}
@@ -53,6 +63,10 @@ func (h *URLHandler) generateShortURL() http.HandlerFunc {
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
 		h.storage.SaveShortURL(shortURL, longURL)
+
+		if err := h.fileWriter.WriteToFile(models.URLInfo{ShortURL: shortURL, OriginalURL: longURL}); err != nil {
+			http.Error(w, "Write to File storage error", http.StatusInternalServerError)
+		}
 
 		logger.Log.Info("generateShortURL()", zap.String("incoming long URL", longURL), zap.String("short URL", shortURL))
 
@@ -88,6 +102,10 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 
 		shortURL := urlmaker.MakeShortURL(req.URL)
 		h.storage.SaveShortURL(shortURL, req.URL)
+
+		if err := h.fileWriter.WriteToFile(models.URLInfo{ShortURL: shortURL, OriginalURL: req.URL}); err != nil {
+			http.Error(w, "Write to File storage error", http.StatusInternalServerError)
+		}
 
 		logger.Log.Info("shorten()", zap.String("incoming long URL", req.URL), zap.String("short URL", shortURL))
 

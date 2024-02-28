@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/FuksKS/urlshortify/internal/logger"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,9 +16,10 @@ import (
 )
 
 const (
-	practicumHost = "https://practicum.yandex.ru/"
-	defaultAddr   = "localhost:8080"
-	defaultHost   = "http://" + defaultAddr + "/"
+	practicumHost   = "https://practicum.yandex.ru/"
+	defaultAddr     = "localhost:8080"
+	defaultHost     = "http://" + defaultAddr + "/"
+	defaultFilePath = "/tmp/short-url-db.json"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -40,7 +43,15 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 
 func TestRouter(t *testing.T) {
 	st := storage.New()
-	handler := New(st, defaultAddr, "a")
+	fileProducer, err := storage.NewProducer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+	}
+	fileConsumer, err := storage.NewConsumer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+	}
+	handler := New(st, fileProducer, fileConsumer, defaultAddr, "a")
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
@@ -90,9 +101,19 @@ func Test_generateShortURL(t *testing.T) {
 	}
 
 	st := storage.New()
+	fileProducer, err := storage.NewProducer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+	}
+	fileConsumer, err := storage.NewConsumer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+	}
 	handler := URLHandler{
-		storage:  st,
-		HTTPAddr: defaultAddr,
+		storage:    st,
+		fileWriter: fileProducer,
+		fileReader: fileConsumer,
+		HTTPAddr:   defaultAddr,
 	}
 
 	tests := []struct {
@@ -157,9 +178,19 @@ func Test_getURLID(t *testing.T) {
 	}
 
 	s := storage.New()
+	fileProducer, err := storage.NewProducer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+	}
+	fileConsumer, err := storage.NewConsumer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+	}
 	handler := URLHandler{
-		storage:  s,
-		HTTPAddr: defaultAddr,
+		storage:    s,
+		fileWriter: fileProducer,
+		fileReader: fileConsumer,
+		HTTPAddr:   defaultAddr,
 	}
 
 	tests := []struct {
@@ -246,10 +277,20 @@ func Test_shorten(t *testing.T) {
 		respBody    string
 	}
 
-	st := storage.New()
+	s := storage.New()
+	fileProducer, err := storage.NewProducer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+	}
+	fileConsumer, err := storage.NewConsumer(defaultFilePath)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+	}
 	handler := URLHandler{
-		storage:  st,
-		HTTPAddr: defaultAddr,
+		storage:    s,
+		fileWriter: fileProducer,
+		fileReader: fileConsumer,
+		HTTPAddr:   defaultAddr,
 	}
 
 	tests := []struct {

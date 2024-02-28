@@ -18,7 +18,16 @@ func main() {
 	st := storage.New()
 	cfg := config.Init()
 
-	handler := handlers.New(st, cfg.HTTPAddr, cfg.HTTPAddr)
+	fileProducer, err := storage.NewProducer(cfg.FileStorage)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+	}
+	fileConsumer, err := storage.NewConsumer(cfg.FileStorage)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+	}
+
+	handler := handlers.New(st, fileProducer, fileConsumer, cfg.HTTPAddr, cfg.HTTPAddr)
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 

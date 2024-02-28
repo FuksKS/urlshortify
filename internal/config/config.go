@@ -7,13 +7,15 @@ import (
 )
 
 const (
-	defaultAddr    = "localhost:8080"
-	defaultBaseURL = "http://localhost:8000/qsd54gFg"
+	defaultAddr     = "localhost:8080"
+	defaultBaseURL  = "http://localhost:8000/qsd54gFg"
+	defaultFilePath = "/tmp/short-url-db.json"
 )
 
 type Config struct {
-	HTTPAddr string `env:"SERVER_ADDRESS"`
-	BaseURL  string `env:"BASE_URL"`
+	HTTPAddr    string `env:"SERVER_ADDRESS"`
+	BaseURL     string `env:"BASE_URL"`
+	FileStorage string `env:"FILE_STORAGE_PATH"`
 }
 
 func Init() *Config {
@@ -22,7 +24,7 @@ func Init() *Config {
 		log.Fatal(err)
 	}
 
-	flagAddr, flagBaseURL := flagConfig()
+	flagAddr, flagBaseURL, flagFilePath := flagConfig()
 
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = flagAddr
@@ -30,13 +32,17 @@ func Init() *Config {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = flagBaseURL
 	}
+	if cfg.FileStorage == "" {
+		cfg.FileStorage = flagFilePath
+	}
 
 	return &cfg
 }
 
-func flagConfig() (flagAddr, flagBaseURL string) {
+func flagConfig() (flagAddr, flagBaseURL, flagFilePath string) {
 	flag.StringVar(&flagAddr, "a", defaultAddr, "адрес запуска HTTP-сервера")
 	flag.StringVar(&flagBaseURL, "b", defaultBaseURL, "базовый адрес результирующего сокращенного URL")
+	flag.StringVar(&flagFilePath, "f", defaultFilePath, "полное имя файла, куда сохраняются данные в формате JSON")
 	flag.Parse()
 	return
 }
