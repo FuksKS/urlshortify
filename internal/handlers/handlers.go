@@ -80,8 +80,8 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		logger.Log.Info("shorten()", zap.String("incoming body", string(body)))
 		req := models.ShortenReq{}
 		err = json.Unmarshal(body, &req)
-		logger.Log.Info("shorten()", zap.String("Unmarshal body error", err.Error()))
 		if err != nil {
+			logger.Log.Info("shorten()", zap.String("Unmarshal body error", err.Error()))
 			http.Error(w, "Unmarshal body error", http.StatusInternalServerError)
 			return
 		}
