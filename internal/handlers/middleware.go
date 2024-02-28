@@ -93,6 +93,7 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 			logger.Log.Error("withGzip middleware", zap.String("Reading request body error", err.Error()))
 			return
 		}
+		defer r.Body.Close()
 
 		logger.Log.Info("withGzip middleware", zap.String("original body", string(body)))
 
