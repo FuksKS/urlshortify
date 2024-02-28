@@ -32,7 +32,7 @@ func NewProducer(filename string) (*Producer, error) {
 }
 
 func (p *Producer) WriteToFile(info models.URLInfo) error {
-	info.Uuid = uuid.New().String()
+	info.UUID = uuid.New().String()
 	data, err := json.Marshal(&info)
 	if err != nil {
 		return err
