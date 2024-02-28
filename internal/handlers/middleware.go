@@ -65,6 +65,7 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 		contentType := r.Header.Get("Content-Type")
 		if contentType != "application/json" && contentType != "text/html" {
 			h.ServeHTTP(w, r)
+			return
 		}
 
 		ow := w
