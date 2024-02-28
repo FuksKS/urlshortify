@@ -4,6 +4,7 @@ import (
 	"github.com/FuksKS/urlshortify/internal/logger"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-// WithLogging — middleware-логер для входящих HTTP-запросов.
+// withLogging — middleware-логер для входящих HTTP-запросов.
 func withLogging(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -55,5 +56,45 @@ func withLogging(h http.HandlerFunc) http.HandlerFunc {
 			zap.Int("status", responseData.status),
 			zap.Int("size", responseData.size),
 		)
+	}
+}
+
+// withGzip - middleware поддерживающий gzip компрессию и декомпрессию
+func withGzip(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		contentType := r.Header.Get("Content-Type")
+		if contentType != "application/json" && contentType != "text/html" {
+			h.ServeHTTP(w, r)
+		}
+
+		ow := w
+
+		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
+		supportsGzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+		if supportsGzip {
+			// оборачиваем оригинальный http.ResponseWriter новым с поддержкой сжатия
+			cw := newCompressWriter(w)
+			// меняем оригинальный http.ResponseWriter на новый
+			ow = cw
+			// не забываем отправить клиенту все сжатые данные после завершения middleware
+			defer cw.Close()
+		}
+
+		// проверяем, что клиент отправил серверу сжатые данные в формате gzip
+		sendsGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")
+		if sendsGzip {
+			// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
+			cr, err := newCompressReader(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// меняем тело запроса на новое
+			r.Body = cr
+			defer cr.Close()
+		}
+
+		h.ServeHTTP(ow, r)
+
 	}
 }
