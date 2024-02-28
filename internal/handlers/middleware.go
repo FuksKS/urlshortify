@@ -63,12 +63,15 @@ func withLogging(h http.HandlerFunc) http.HandlerFunc {
 // withGzip - middleware поддерживающий gzip компрессию и декомпрессию
 func withGzip(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		contentType := r.Header.Get("Content-Type")
-		logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
-		if contentType != "application/json" && contentType != "text/html" {
-			h.ServeHTTP(w, r)
-			return
-		}
+		/*
+			contentType := r.Header.Get("Content-Type")
+			logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
+			if contentType != "application/json" && contentType != "text/html" {
+				h.ServeHTTP(w, r)
+				return
+			}
+
+		*/
 
 		ow := w
 
@@ -87,15 +90,6 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 		// проверяем, что клиент отправил серверу сжатые данные в формате gzip
 		sendsGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")
 		logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
-
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			logger.Log.Error("withGzip middleware", zap.String("Reading request body error", err.Error()))
-			return
-		}
-		defer r.Body.Close()
-
-		logger.Log.Info("withGzip middleware", zap.String("original body", string(body)))
 
 		if sendsGzip {
 			logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
