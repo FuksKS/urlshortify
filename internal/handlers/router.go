@@ -22,9 +22,9 @@ func (h *URLHandler) InitRouter() chi.Router {
 
 	r := chi.NewRouter()
 
-	r.Post("/", withLogging(h.generateShortURL()))
-	r.Get("/{id}", withLogging(h.getURLID()))
-	r.Post("/api/shorten", withLogging(h.shorten()))
+	r.Post("/", withLogging(withGzip(h.generateShortURL())))
+	r.Get("/{id}", withLogging(withGzip(h.getURLID())))
+	r.Post("/api/shorten", withLogging(withGzip(h.shorten())))
 
 	return r
 }
