@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/FuksKS/urlshortify/internal/logger"
 	"go.uber.org/zap"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -63,7 +64,8 @@ func withLogging(h http.HandlerFunc) http.HandlerFunc {
 func withGzip(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
-		if contentType != "application/json" && contentType != "text/html" {
+		logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
+		if contentType != "application/json" && contentType != "text/html" && contentType != "text/plain" {
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -72,6 +74,7 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 
 		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
 		supportsGzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+		logger.Log.Info("withGzip middleware", zap.String("Accept-Encoding", r.Header.Get("Accept-Encoding")))
 		if supportsGzip {
 			// оборачиваем оригинальный http.ResponseWriter новым с поддержкой сжатия
 			cw := newCompressWriter(w)
@@ -83,7 +86,18 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 
 		// проверяем, что клиент отправил серверу сжатые данные в формате gzip
 		sendsGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")
+		logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Log.Error("withGzip middleware", zap.String("Reading request body error", err.Error()))
+			return
+		}
+
+		logger.Log.Info("withGzip middleware", zap.String("original body", string(body)))
+
 		if sendsGzip {
+			logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
 			// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
@@ -91,6 +105,12 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 			// меняем тело запроса на новое
+			newBody, err := io.ReadAll(cr)
+			if err != nil {
+				logger.Log.Error("withGzip middleware", zap.String("Reading request newBody error", err.Error()))
+				return
+			}
+			logger.Log.Info("withGzip middleware", zap.String("new body (if it was gzip)", string(newBody)))
 			r.Body = cr
 			defer cr.Close()
 		}
