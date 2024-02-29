@@ -11,8 +11,7 @@ import (
 )
 
 type Producer struct {
-	file *os.File
-	// добавляем Writer в Producer
+	file      *os.File
 	writer    *bufio.Writer
 	fileMutex *sync.Mutex
 }
@@ -24,8 +23,7 @@ func NewProducer(filename string) (*Producer, error) {
 	}
 
 	return &Producer{
-		file: file,
-		// создаём новый Writer
+		file:      file,
 		writer:    bufio.NewWriter(file),
 		fileMutex: &sync.Mutex{},
 	}, nil
@@ -38,11 +36,9 @@ func (p *Producer) WriteToFile(info models.URLInfo) error {
 		return err
 	}
 
-	// записываем событие в буфер
 	if _, err := p.writer.Write(data); err != nil {
 		return err
 	}
-
 	// добавляем перенос строки
 	if err := p.writer.WriteByte('\n'); err != nil {
 		return err
@@ -57,8 +53,7 @@ func (p *Producer) WriteToFile(info models.URLInfo) error {
 }
 
 type Consumer struct {
-	file *os.File
-	// добавляем scanner в Consumer
+	file    *os.File
 	scanner *bufio.Scanner
 }
 
@@ -69,14 +64,12 @@ func NewConsumer(filename string) (*Consumer, error) {
 	}
 
 	return &Consumer{
-		file: file,
-		// создаём новый scanner
+		file:    file,
 		scanner: bufio.NewScanner(file),
 	}, nil
 }
 
 func (c *Consumer) ReadFromFile(shortURL string) (string, error) {
-	// одиночное сканирование до следующей строки
 	if !c.scanner.Scan() {
 		return "", c.scanner.Err()
 	}

@@ -41,11 +41,11 @@ func withLogging(h http.HandlerFunc) http.HandlerFunc {
 			size:   0,
 		}
 		lw := loggingResponseWriter{
-			ResponseWriter: w, // встраиваем оригинальный http.ResponseWriter
+			ResponseWriter: w,
 			responseData:   responseData,
 		}
 
-		h.ServeHTTP(&lw, r) // внедряем реализацию http.ResponseWriter
+		h.ServeHTTP(&lw, r)
 
 		duration := time.Since(start)
 
@@ -69,36 +69,27 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 				h.ServeHTTP(w, r)
 				return
 			}
-
 		*/
 
 		ow := w
 
 		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
-		supportsGzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+		clientSupportsGzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 		logger.Log.Info("withGzip middleware", zap.String("Accept-Encoding", r.Header.Get("Accept-Encoding")))
-		if supportsGzip {
-			// оборачиваем оригинальный http.ResponseWriter новым с поддержкой сжатия
+		if clientSupportsGzip {
 			cw := newCompressWriter(w)
-			// меняем оригинальный http.ResponseWriter на новый
 			ow = cw
-			// не забываем отправить клиенту все сжатые данные после завершения middleware
 			defer cw.Close()
 		}
 
 		// проверяем, что клиент отправил серверу сжатые данные в формате gzip
-		sendsGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")
-		logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
-
-		if sendsGzip {
-			logger.Log.Info("withGzip middleware", zap.String("Content-Encoding", r.Header.Get("Content-Encoding")))
-			// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
+		clientSentGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")
+		if clientSentGzip {
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				http.Error(w, "Add gzip compress error", http.StatusInternalServerError)
 				return
 			}
-			// меняем тело запроса на новое
 			r.Body = cr
 			defer cr.Close()
 		}

@@ -3,10 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/FuksKS/urlshortify/internal/logger"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strings"
@@ -24,8 +22,6 @@ func (h *URLHandler) getURLID() http.HandlerFunc {
 			http.Error(w, "Incorrect path", http.StatusBadRequest)
 		}
 		id := parts[1]
-
-		logger.Log.Info("getURLID()", zap.String("incoming short URL", id), zap.String("longURL from storage", h.storage.GetLongURL(id)))
 
 		if longURL := h.storage.GetLongURL(id); longURL != "" {
 			http.Redirect(w, r, longURL, http.StatusTemporaryRedirect)
@@ -68,8 +64,6 @@ func (h *URLHandler) generateShortURL() http.HandlerFunc {
 			http.Error(w, "Write to File storage error", http.StatusInternalServerError)
 		}
 
-		logger.Log.Info("generateShortURL()", zap.String("incoming long URL", longURL), zap.String("short URL", shortURL))
-
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
 
@@ -91,11 +85,9 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 			return
 		}
 
-		logger.Log.Info("shorten()", zap.String("incoming body", string(body)))
 		req := models.ShortenReq{}
 		err = json.Unmarshal(body, &req)
 		if err != nil {
-			logger.Log.Info("shorten()", zap.String("Unmarshal body error", err.Error()))
 			http.Error(w, "Unmarshal body error", http.StatusInternalServerError)
 			return
 		}
@@ -106,8 +98,6 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		if err := h.fileWriter.WriteToFile(models.URLInfo{ShortURL: shortURL, OriginalURL: req.URL}); err != nil {
 			http.Error(w, "Write to File storage error", http.StatusInternalServerError)
 		}
-
-		logger.Log.Info("shorten()", zap.String("incoming long URL", req.URL), zap.String("short URL", shortURL))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)

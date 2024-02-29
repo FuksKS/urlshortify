@@ -20,11 +20,11 @@ func main() {
 
 	fileProducer, err := storage.NewProducer(cfg.FileStorage)
 	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage producer"))
+		logger.Log.Fatal(err.Error(), zap.String("init", "set file storage producer"))
 	}
 	fileConsumer, err := storage.NewConsumer(cfg.FileStorage)
 	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("event", "set file storage consumer"))
+		logger.Log.Fatal(err.Error(), zap.String("init", "set file storage consumer"))
 	}
 
 	handler := handlers.New(st, fileProducer, fileConsumer, cfg.HTTPAddr, cfg.HTTPAddr)
