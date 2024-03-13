@@ -6,85 +6,91 @@ import (
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/google/uuid"
 	"os"
-	"strings"
-	"sync"
 )
 
-type Producer struct {
-	file      *os.File
-	writer    *bufio.Writer
-	fileMutex *sync.Mutex
+type fileWriter struct {
+	file   *os.File
+	writer *bufio.Writer
 }
 
-func NewProducer(filename string) (*Producer, error) {
+func newFileWriter(filename string) (*fileWriter, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Producer{
-		file:      file,
-		writer:    bufio.NewWriter(file),
-		fileMutex: &sync.Mutex{},
-	}, nil
+	return &fileWriter{file: file, writer: bufio.NewWriter(file)}, nil
 }
 
-func (p *Producer) WriteToFile(info models.URLInfo) error {
-	info.UUID = uuid.New().String()
-	data, err := json.Marshal(&info)
-	if err != nil {
-		return err
+func (f *fileWriter) Save(cache map[string]string) error {
+	for shortURL, longURL := range cache {
+		data := models.URLInfo{
+			UUID:        uuid.New().String(),
+			ShortURL:    shortURL,
+			OriginalURL: longURL,
+		}
+
+		dataByte, err := json.Marshal(&data)
+		if err != nil {
+			return err
+		}
+
+		if _, err := f.writer.Write(dataByte); err != nil {
+			return err
+		}
+		// добавляем перенос строки
+		if err := f.writer.WriteByte('\n'); err != nil {
+			return err
+		}
+
+		// записываем буфер в файл
+		err = f.writer.Flush()
+		if err != nil {
+			return err
+		}
 	}
 
-	if _, err := p.writer.Write(data); err != nil {
-		return err
-	}
-	// добавляем перенос строки
-	if err := p.writer.WriteByte('\n'); err != nil {
-		return err
-	}
-
-	// записываем буфер в файл
-	p.fileMutex.Lock()
-	err = p.writer.Flush()
-	p.fileMutex.Unlock()
-
-	return err
+	return nil
 }
 
-type Consumer struct {
+type FileReader struct {
 	file    *os.File
 	scanner *bufio.Scanner
 }
 
-func NewConsumer(filename string) (*Consumer, error) {
-	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0666)
+func newFileReader(filePath string) (*FileReader, error) {
+	file, err := os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Consumer{
+	return &FileReader{
 		file:    file,
 		scanner: bufio.NewScanner(file),
 	}, nil
 }
 
-func (c *Consumer) ReadFromFile(shortURL string) (string, error) {
-	if !c.scanner.Scan() {
-		return "", c.scanner.Err()
-	}
-
-	for c.scanner.Scan() {
-		line := c.scanner.Text()
-		if strings.Contains(line, shortURL) {
-			info := models.URLInfo{}
-			err := json.Unmarshal([]byte(line), &info)
-			if err != nil {
-				return "", err
-			}
-			return info.OriginalURL, nil
+func (r *FileReader) read() (map[string]string, error) {
+	/*
+		if !fileConsumer.scanner.Scan() {
+			fmt.Println(" !fileConsumer.scanner.Scan()")
+			return nil, fileConsumer.scanner.Err()
 		}
+
+	*/
+
+	m := make(map[string]string)
+	for r.scanner.Scan() {
+		line := r.scanner.Text()
+
+		info := models.URLInfo{}
+		err := json.Unmarshal([]byte(line), &info)
+		if err != nil {
+			return nil, err
+		}
+
+		m[info.ShortURL] = info.OriginalURL
 	}
 
-	return "", nil
+	return m, nil
 }

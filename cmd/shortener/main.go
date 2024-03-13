@@ -9,29 +9,28 @@ import (
 	"net/http"
 )
 
-const defaultLoggerLevel = "INFO"
-
 func main() {
-	if err := logger.Init(defaultLoggerLevel); err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("init", "logger Initialize"))
-	}
-	st := storage.New()
 	cfg := config.Init()
 
-	fileProducer, err := storage.NewProducer(cfg.FileStorage)
-	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("init", "set file storage producer"))
-	}
-	fileConsumer, err := storage.NewConsumer(cfg.FileStorage)
-	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("init", "set file storage consumer"))
+	if err := logger.Init(logger.LoggerLevelINFO); err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("init", "logger Initialize"))
 	}
 
-	handler := handlers.New(st, fileProducer, fileConsumer, cfg.HTTPAddr, cfg.HTTPAddr)
+	st, err := storage.New(cfg.FileStorage)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
+	}
+
+	handler := handlers.New(st, cfg.HTTPAddr, cfg.HTTPAddr)
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 
 	if err := http.ListenAndServe(handler.HTTPAddr, handler.InitRouter()); err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("event", "start server"))
 	}
+
+	if err = st.SaveCache(); err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
+	}
+
 }

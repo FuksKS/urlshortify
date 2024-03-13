@@ -5,20 +5,16 @@ import (
 )
 
 type URLHandler struct {
-	storage    Storager
-	fileWriter FileWriter
-	fileReader FileReader
-	HTTPAddr   string
+	storage  Storager
+	HTTPAddr string
 }
 
-func New(st Storager, fw FileWriter, fr FileReader, addr, baseURL string) *URLHandler {
+func New(st Storager, addr, baseURL string) *URLHandler {
 	st.SaveDefaultURL(addr, baseURL)
 
 	return &URLHandler{
-		storage:    st,
-		fileWriter: fw,
-		fileReader: fr,
-		HTTPAddr:   addr,
+		storage:  st,
+		HTTPAddr: addr,
 	}
 }
 

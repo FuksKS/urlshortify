@@ -4,6 +4,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	LoggerLevelINFO  = "INFO"
+	LoggerLevelDEBUG = "DEBUG"
+)
+
 var Log *zap.Logger = zap.NewNop()
 
 // Init инициализирует синглтон логера с необходимым уровнем логирования.
