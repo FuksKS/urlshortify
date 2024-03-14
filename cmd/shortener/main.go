@@ -7,6 +7,9 @@ import (
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -25,12 +28,17 @@ func main() {
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 
-	if err := http.ListenAndServe(handler.HTTPAddr, handler.InitRouter()); err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("event", "start server"))
-	}
+	go func() {
+		if err := http.ListenAndServe(handler.HTTPAddr, handler.InitRouter()); err != nil {
+			logger.Log.Fatal(err.Error(), zap.String("event", "start server"))
+		}
+	}()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+	<-done
 
 	if err = st.SaveCache(); err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
 	}
-
 }
