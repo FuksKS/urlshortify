@@ -42,7 +42,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 func TestRouter(t *testing.T) {
 	st, _ := storage.New(defaultFilePath)
 
-	handler := New(st, defaultAddr, "a")
+	handler := New(st, nil, defaultAddr, "a")
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
