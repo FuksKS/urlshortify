@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
@@ -93,5 +94,21 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		}
 
 		w.Write(respB)
+	}
+}
+
+func (h *URLHandler) pingDb() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if err := h.db.Ping(context.Background()); err != nil {
+			http.Error(w, "Ping db", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/handlers"
 	"github.com/FuksKS/urlshortify/internal/logger"
+	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"go.uber.org/zap"
 	"net/http"
@@ -24,7 +25,12 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
 	}
 
-	handler := handlers.New(st, cfg.HTTPAddr, cfg.HTTPAddr)
+	db, err := pg.Connect(cfg.DbDSN)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
+	}
+
+	handler := handlers.New(st, db, cfg.HTTPAddr, cfg.HTTPAddr)
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 
