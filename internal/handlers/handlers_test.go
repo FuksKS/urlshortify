@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/stretchr/testify/assert"
@@ -13,9 +14,10 @@ import (
 )
 
 const (
-	practicumHost = "https://practicum.yandex.ru/"
-	defaultAddr   = "localhost:8080"
-	defaultHost   = "http://" + defaultAddr + "/"
+	practicumHost   = "https://practicum.yandex.ru/"
+	defaultAddr     = "localhost:8080"
+	defaultHost     = "http://" + defaultAddr + "/"
+	defaultFilePath = "/tmp/short-url-db.json"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -38,8 +40,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 }
 
 func TestRouter(t *testing.T) {
-	st := storage.New()
-	handler := New(st, defaultAddr, "a")
+	st, _ := storage.New(defaultFilePath)
+
+	handler := New(st, nil, defaultAddr, "a")
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
@@ -88,7 +91,8 @@ func Test_generateShortURL(t *testing.T) {
 		respBody    string
 	}
 
-	st := storage.New()
+	st, _ := storage.New(defaultFilePath)
+
 	handler := URLHandler{
 		storage:  st,
 		HTTPAddr: defaultAddr,
@@ -155,7 +159,7 @@ func Test_getURLID(t *testing.T) {
 		location   string
 	}
 
-	s := storage.New()
+	s, _ := storage.New(defaultFilePath)
 	handler := URLHandler{
 		storage:  s,
 		HTTPAddr: defaultAddr,
@@ -234,6 +238,62 @@ func Test_getURLID(t *testing.T) {
 
 			assert.Equal(t, tt.want.statusCode, result.StatusCode)
 			assert.Equal(t, tt.want.location, result.Header.Get("Location"))
+		})
+	}
+}
+
+func Test_shorten(t *testing.T) {
+	type want struct {
+		statusCode  int
+		contentType string
+		respBody    string
+	}
+
+	s, _ := storage.New(defaultFilePath)
+	handler := URLHandler{
+		storage:  s,
+		HTTPAddr: defaultAddr,
+	}
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+		st     Storager
+		want   want
+	}{
+		{
+			name:   "simple test",
+			method: http.MethodPost,
+			path:   "/api/shorten",
+			st:     handler.storage,
+			body:   fmt.Sprintf(`{"url":"%s"}`, practicumHost),
+			want: want{
+				statusCode:  http.StatusCreated,
+				contentType: "application/json",
+				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultHost+urlmaker.MakeShortURL(practicumHost)),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+			h := handler.shorten()
+			h(w, request)
+
+			result := w.Result()
+			defer result.Body.Close()
+
+			assert.Equal(t, tt.want.statusCode, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.respBody, string(body))
 		})
 	}
 }
