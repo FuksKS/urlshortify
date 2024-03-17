@@ -2,14 +2,14 @@ package pg
 
 const (
 	existDBQuery = `
-SELECT EXISTS (SELECT FROM pg_database WHERE datname = $1);
+SELECT EXISTS (SELECT FROM pg_database WHERE datname = 'shortener');
 `
 
 	createDBQuery = `
-CREATE DATABASE $1
+CREATE DATABASE 'shortener'
 `
 	createTableQuery = `
-create table if not exists $1
+create table if not exists 'shortener'
 (
     short_url    text not null primary key,
     original_url text not null

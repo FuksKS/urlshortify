@@ -31,19 +31,19 @@ func NewConnect(dbDSN string) (PgRepo, error) {
 	}
 
 	var exists bool
-	err = db.QueryRow(context.Background(), existDBQuery, dbName).Scan(&exists)
+	err = db.QueryRow(context.Background(), existDBQuery).Scan(&exists)
 	if err != nil {
 		return PgRepo{}, err
 	}
 
 	if !exists {
-		_, err = db.Exec(ctx, createDBQuery, dbName)
+		_, err = db.Exec(ctx, createDBQuery)
 		if err != nil {
 			return PgRepo{}, err
 		}
 	}
 
-	_, err = db.Exec(ctx, createTableQuery, tableName)
+	_, err = db.Exec(ctx, createTableQuery)
 	if err != nil {
 		return PgRepo{}, err
 	}

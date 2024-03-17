@@ -55,7 +55,7 @@ func flagConfig() (flagAddr, flagBaseURL, flagFilePath, flagDBDSN string) {
 	flag.StringVar(&flagBaseURL, "b", defaultBaseURL, "базовый адрес результирующего сокращенного URL")
 	flag.StringVar(&flagFilePath, "f", defaultFilePath, "полное имя файла, куда сохраняются данные в формате JSON")
 
-	//defaultDBDSN := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", defaultHost, defaultUser, defaultPass, defaultDbName)
+	//defaultDBDSN := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", defaultHost, defaultUser, defaultPass, defaultDBName)
 	flag.StringVar(&flagDBDSN, "d", "", "строка с адресом подключения к БД")
 	flag.Parse()
 	return
