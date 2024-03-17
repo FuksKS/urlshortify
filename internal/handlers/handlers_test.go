@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/stretchr/testify/assert"
@@ -40,9 +41,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 }
 
 func TestRouter(t *testing.T) {
-	st, _ := storage.New(defaultFilePath)
+	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 
-	handler := New(st, nil, defaultAddr, "a")
+	handler := New(st, pg.PgRepo{}, defaultAddr, "a")
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
@@ -91,7 +92,7 @@ func Test_generateShortURL(t *testing.T) {
 		respBody    string
 	}
 
-	st, _ := storage.New(defaultFilePath)
+	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 
 	handler := URLHandler{
 		storage:  st,
@@ -159,7 +160,7 @@ func Test_getURLID(t *testing.T) {
 		location   string
 	}
 
-	s, _ := storage.New(defaultFilePath)
+	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 	handler := URLHandler{
 		storage:  s,
 		HTTPAddr: defaultAddr,
@@ -249,7 +250,7 @@ func Test_shorten(t *testing.T) {
 		respBody    string
 	}
 
-	s, _ := storage.New(defaultFilePath)
+	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 	handler := URLHandler{
 		storage:  s,
 		HTTPAddr: defaultAddr,

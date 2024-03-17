@@ -20,14 +20,18 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("init", "logger Initialize"))
 	}
 
-	st, err := storage.New(cfg.FileStorage)
-	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
+	var db pg.PgRepo
+	var err error
+	if cfg.DBDSN != "" {
+		db, err = pg.NewConnect(cfg.DBDSN)
+		if err != nil {
+			logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
+		}
 	}
 
-	db, err := pg.Connect(cfg.DbDSN)
+	st, err := storage.New(db, cfg.FileStorage)
 	if err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
+		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
 	}
 
 	handler := handlers.New(st, db, cfg.HTTPAddr, cfg.HTTPAddr)

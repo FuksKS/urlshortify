@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/FuksKS/urlshortify/internal/pg"
 	"sync"
 )
 
@@ -11,17 +12,26 @@ type Storage struct {
 	reader   reader
 }
 
-func New(filePath string) (*Storage, error) {
-	saver, err := newFileWriter(filePath)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := newFileReader(filePath)
-	if err != nil {
-		return nil, err
+func New(db pg.PgRepo, filePath string) (*Storage, error) {
+	var saver saver
+	var reader reader
+	var err error
+
+	if db.DB != nil {
+		reader = &db
+		saver = &db
+	} else {
+		saver, err = newFileWriter(filePath)
+		if err != nil {
+			return nil, err
+		}
+		reader, err = newFileReader(filePath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	cashe, err := reader.read()
+	cashe, err := reader.Read()
 	if err != nil {
 		return nil, err
 	}

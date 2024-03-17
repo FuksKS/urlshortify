@@ -97,14 +97,14 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 	}
 }
 
-func (h *URLHandler) pingDb() http.HandlerFunc {
+func (h *URLHandler) pingDB() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		if err := h.db.Ping(context.Background()); err != nil {
+		if err := h.db.DB.Ping(context.Background()); err != nil {
 			http.Error(w, "Ping db", http.StatusInternalServerError)
 			return
 		}

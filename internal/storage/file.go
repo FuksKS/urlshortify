@@ -70,7 +70,7 @@ func newFileReader(filePath string) (*FileReader, error) {
 	}, nil
 }
 
-func (r *FileReader) read() (map[string]string, error) {
+func (r *FileReader) Read() (map[string]string, error) {
 	/*
 		if !fileConsumer.scanner.Scan() {
 			fmt.Println(" !fileConsumer.scanner.Scan()")

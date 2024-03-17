@@ -5,5 +5,5 @@ type saver interface {
 }
 
 type reader interface {
-	read() (map[string]string, error)
+	Read() (map[string]string, error)
 }

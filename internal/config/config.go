@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"github.com/caarlos0/env/v6"
 	"log"
 )
@@ -17,14 +16,14 @@ const (
 	defaultHost   = "localhost"
 	defaultUser   = "defUser"
 	defaultPass   = "pass"
-	defaultDbName = "shortener"
+	defaultDBName = "shortener"
 )
 
 type Config struct {
 	HTTPAddr    string `env:"SERVER_ADDRESS"`
 	BaseURL     string `env:"BASE_URL"`
 	FileStorage string `env:"FILE_STORAGE_PATH"`
-	DbDSN       string `env:"DATABASE_DSN"`
+	DBDSN       string `env:"DATABASE_DSN"`
 }
 
 func Init() *Config {
@@ -33,7 +32,7 @@ func Init() *Config {
 		log.Fatal(err)
 	}
 
-	flagAddr, flagBaseURL, flagFilePath, flagDbDSN := flagConfig()
+	flagAddr, flagBaseURL, flagFilePath, flagDBDSN := flagConfig()
 
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = flagAddr
@@ -44,20 +43,20 @@ func Init() *Config {
 	if cfg.FileStorage == "" {
 		cfg.FileStorage = flagFilePath
 	}
-	if cfg.DbDSN == "" {
-		cfg.DbDSN = flagDbDSN
+	if cfg.DBDSN == "" {
+		cfg.DBDSN = flagDBDSN
 	}
 
 	return &cfg
 }
 
-func flagConfig() (flagAddr, flagBaseURL, flagFilePath, flagDbDSN string) {
+func flagConfig() (flagAddr, flagBaseURL, flagFilePath, flagDBDSN string) {
 	flag.StringVar(&flagAddr, "a", defaultAddr, "адрес запуска HTTP-сервера")
 	flag.StringVar(&flagBaseURL, "b", defaultBaseURL, "базовый адрес результирующего сокращенного URL")
 	flag.StringVar(&flagFilePath, "f", defaultFilePath, "полное имя файла, куда сохраняются данные в формате JSON")
 
-	defaultDbDSN := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", defaultHost, defaultUser, defaultPass, defaultDbName)
-	flag.StringVar(&flagDbDSN, "d", defaultDbDSN, "строка с адресом подключения к БД")
+	//defaultDBDSN := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", defaultHost, defaultUser, defaultPass, defaultDbName)
+	flag.StringVar(&flagDBDSN, "d", "", "строка с адресом подключения к БД")
 	flag.Parse()
 	return
 }

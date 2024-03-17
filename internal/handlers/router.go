@@ -1,17 +1,17 @@
 package handlers
 
 import (
+	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type URLHandler struct {
 	storage  Storager
-	db       *pgxpool.Pool
+	db       pg.PgRepo
 	HTTPAddr string
 }
 
-func New(st Storager, db *pgxpool.Pool, addr, baseURL string) *URLHandler {
+func New(st Storager, db pg.PgRepo, addr, baseURL string) *URLHandler {
 	st.SaveDefaultURL(addr, baseURL)
 
 	return &URLHandler{
@@ -28,7 +28,7 @@ func (h *URLHandler) InitRouter() chi.Router {
 	r.Post("/", withLogging(withGzip(h.generateShortURL())))
 	r.Get("/{id}", withLogging(h.getURLID()))
 	r.Post("/api/shorten", withLogging(withGzip(h.shorten())))
-	r.Get("/ping", withLogging(h.pingDb()))
+	r.Get("/ping", withLogging(h.pingDB()))
 
 	return r
 }
