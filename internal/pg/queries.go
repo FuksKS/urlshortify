@@ -6,10 +6,10 @@ SELECT EXISTS (SELECT FROM pg_database WHERE datname = 'shortener');
 `
 
 	createDBQuery = `
-CREATE DATABASE 'shortener'
+CREATE DATABASE shortener
 `
 	createTableQuery = `
-create table if not exists 'shortener'
+create table if not exists shortener
 (
     short_url    text not null primary key,
     original_url text not null
