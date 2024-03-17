@@ -16,6 +16,6 @@ create table if not exists shortener
 );
 `
 	getAllURLsQuery = `
-select short_url, original_url from shortener.shortener
+select short_url, original_url from shortener
 `
 )

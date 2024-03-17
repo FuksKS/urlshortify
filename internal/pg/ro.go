@@ -12,6 +12,9 @@ func (r *PgRepo) Read() (map[string]string, error) {
 	defer cancel()
 
 	rows, err := r.DB.Query(ctx, getAllURLsQuery)
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 
 	urlsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.URLInfo])
