@@ -48,7 +48,9 @@ func main() {
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 	<-done
 
-	if err = st.SaveCache(); err != nil {
-		logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
+	if cfg.DBDSN == "" { // Записываем в файл только если нет бд
+		if err = st.SaveCache(); err != nil {
+			logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
+		}
 	}
 }

@@ -53,6 +53,11 @@ func (f *fileWriter) Save(cache map[string]string) error {
 	return nil
 }
 
+func (f *fileWriter) SaveOneURL(shortURL, originalURL string) error {
+	// В файл построчно не сохраняем. Метод просто для имплиментации интерфейса
+	return nil
+}
+
 type FileReader struct {
 	file    *os.File
 	scanner *bufio.Scanner

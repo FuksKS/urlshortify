@@ -47,6 +47,8 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) {
 		s.Cashe[shortURL] = longURL
 		s.mapMutex.Unlock()
 	}
+
+	s.saver.SaveOneURL(shortURL, longURL)
 }
 
 func (s *Storage) GetLongURL(shortURL string) string {
@@ -57,6 +59,8 @@ func (s *Storage) SaveDefaultURL(defaultURL, shortDefaultURL string) {
 	s.mapMutex.Lock()
 	s.Cashe[shortDefaultURL] = defaultURL
 	s.mapMutex.Unlock()
+
+	s.saver.SaveOneURL(shortDefaultURL, defaultURL)
 }
 
 func (s *Storage) SaveCache() error {

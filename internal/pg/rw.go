@@ -32,3 +32,15 @@ func (r *PgRepo) Save(cache map[string]string) error {
 
 	return nil
 }
+
+func (r *PgRepo) SaveOneURL(shortURL, originalURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := r.DB.Exec(ctx, saveOneURLQuery, shortURL, originalURL)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -28,4 +28,9 @@ select
                                                   "original_url" text
         ) on conflict do nothing;
 `
+	saveOneURLQuery = `
+insert into shortener (short_url, original_url)
+values ($1, $2)
+on conflict do nothing;
+`
 )
