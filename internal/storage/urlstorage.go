@@ -50,7 +50,7 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) {
 		s.mapMutex.Unlock()
 	}
 
-	s.saver.SaveURLs([]models.URLInfo{{uuid.New().String(), shortURL, longURL}})
+	s.saver.SaveURLs([]models.URLInfo{{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL}})
 }
 
 func (s *Storage) SaveURLs(urls []models.URLInfo) {
@@ -67,14 +67,6 @@ func (s *Storage) SaveURLs(urls []models.URLInfo) {
 
 func (s *Storage) GetLongURL(shortURL string) string {
 	return s.Cashe[shortURL]
-}
-
-func (s *Storage) SaveDefaultURL(defaultURL, shortDefaultURL string) {
-	s.mapMutex.Lock()
-	s.Cashe[shortDefaultURL] = defaultURL
-	s.mapMutex.Unlock()
-
-	s.saver.SaveURLs([]models.URLInfo{{uuid.New().String(), shortDefaultURL, defaultURL}})
 }
 
 func (s *Storage) SaveCache() error {
