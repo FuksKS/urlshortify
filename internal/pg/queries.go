@@ -11,6 +11,7 @@ CREATE DATABASE shortener
 	createTableQuery = `
 create table if not exists shortener
 (
+    id           text not null,
     short_url    text not null primary key,
     original_url text not null
 );
@@ -29,8 +30,8 @@ select
         ) on conflict do nothing;
 `
 	saveOneURLQuery = `
-insert into shortener (short_url, original_url)
-values ($1, $2)
+insert into shortener (id, short_url, original_url)
+values ($1, $2, $3)
 on conflict do nothing;
 `
 )

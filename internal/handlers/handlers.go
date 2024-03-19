@@ -97,6 +97,51 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 	}
 }
 
+func (h *URLHandler) shortenBatch() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Reading request body error", http.StatusInternalServerError)
+			return
+		}
+
+		var req []models.URLInfo
+		err = json.Unmarshal(body, &req)
+		if err != nil {
+			http.Error(w, "Unmarshal body error", http.StatusInternalServerError)
+			return
+		}
+
+		for i := range req {
+			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
+		}
+
+		h.storage.SaveURLs(req)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+
+		resp := make([]models.URLInfo, len(req))
+		for i := range req {
+			resp[i].UUID = req[i].UUID
+			resp[i].ShortURL = fmt.Sprintf("http://%s/%s", h.HTTPAddr, req[i].ShortURL)
+		}
+
+		respB, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Marshal response error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respB)
+	}
+}
+
 func (h *URLHandler) pingDB() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {

@@ -2,45 +2,59 @@ package pg
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"time"
 )
 
 func (r *PgRepo) Save(cache map[string]string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	// Для имплементации. За 1 раз кэш сохраняем только в файл
+	/*
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 
-	allURLs := make([]models.URLInfo, 0, len(cache))
+		allURLs := make([]models.URLInfo, 0, len(cache))
 
-	for shortURL, originalURL := range cache {
-		allURLs = append(allURLs, models.URLInfo{
-			ShortURL:    shortURL,
-			OriginalURL: originalURL,
-		})
-	}
+		for shortURL, originalURL := range cache {
+			allURLs = append(allURLs, models.URLInfo{
+				UUID:        uuid.New().String(),
+				ShortURL:    shortURL,
+				OriginalURL: originalURL,
+			})
+		}
 
-	allURLsByte, err := json.Marshal(allURLs)
-	if err != nil {
-		return err
-	}
+		allURLsByte, err := json.Marshal(allURLs)
+		if err != nil {
+			return err
+		}
 
-	_, err = r.DB.Exec(ctx, saveCashQuery, string(allURLsByte))
-	if err != nil {
-		return err
-	}
+		_, err = r.DB.Exec(ctx, saveCashQuery, string(allURLsByte))
+		if err != nil {
+			return err
+		}
+
+	*/
 
 	return nil
 }
 
-func (r *PgRepo) SaveOneURL(shortURL, originalURL string) error {
+func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := r.DB.Exec(ctx, saveOneURLQuery, shortURL, originalURL)
+	tx, err := r.DB.Begin(ctx)
 	if err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
 
-	return nil
+	for i := range urls {
+		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
+		if err != nil {
+			tx.Rollback(ctx)
+			return err
+		}
+	}
+
+	err = tx.Commit(ctx)
+	return err
 }

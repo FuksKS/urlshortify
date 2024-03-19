@@ -28,6 +28,7 @@ func (h *URLHandler) InitRouter() chi.Router {
 	r.Post("/", withLogging(withGzip(h.generateShortURL())))
 	r.Get("/{id}", withLogging(h.getURLID()))
 	r.Post("/api/shorten", withLogging(withGzip(h.shorten())))
+	r.Post("/api/shorten/batch", withLogging(withGzip(h.shortenBatch())))
 	r.Get("/ping", withLogging(h.pingDB()))
 
 	return r

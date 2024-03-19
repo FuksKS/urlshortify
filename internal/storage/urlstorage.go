@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
+	"github.com/google/uuid"
 	"sync"
 )
 
@@ -48,7 +50,19 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) {
 		s.mapMutex.Unlock()
 	}
 
-	s.saver.SaveOneURL(shortURL, longURL)
+	s.saver.SaveURLs([]models.URLInfo{{uuid.New().String(), shortURL, longURL}})
+}
+
+func (s *Storage) SaveURLs(urls []models.URLInfo) {
+	for i := range urls {
+		if _, ok := s.Cashe[urls[i].ShortURL]; !ok {
+			s.mapMutex.Lock()
+			s.Cashe[urls[i].ShortURL] = urls[i].OriginalURL
+			s.mapMutex.Unlock()
+		}
+	}
+
+	s.saver.SaveURLs(urls)
 }
 
 func (s *Storage) GetLongURL(shortURL string) string {
@@ -60,7 +74,7 @@ func (s *Storage) SaveDefaultURL(defaultURL, shortDefaultURL string) {
 	s.Cashe[shortDefaultURL] = defaultURL
 	s.mapMutex.Unlock()
 
-	s.saver.SaveOneURL(shortDefaultURL, defaultURL)
+	s.saver.SaveURLs([]models.URLInfo{{uuid.New().String(), shortDefaultURL, defaultURL}})
 }
 
 func (s *Storage) SaveCache() error {

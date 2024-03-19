@@ -9,7 +9,7 @@ type ShortenResp struct {
 }
 
 type URLInfo struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
+	UUID        string `json:"correlation_id"`
+	ShortURL    string `json:"short_url,omitempty"`
+	OriginalURL string `json:"original_url,omitempty"`
 }
