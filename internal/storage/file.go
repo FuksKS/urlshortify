@@ -58,6 +58,11 @@ func (f *fileWriter) SaveURLs(urls []models.URLInfo) error {
 	return nil
 }
 
+func (f *fileWriter) SaveOneURL(info models.URLInfo) error {
+	// В файл построчно не сохраняем. Метод просто для имплиментации интерфейса
+	return nil
+}
+
 type FileReader struct {
 	file    *os.File
 	scanner *bufio.Scanner

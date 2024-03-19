@@ -37,6 +37,23 @@ func (r *PgRepo) Save(cache map[string]string) error {
 	return nil
 }
 
+func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := commandTag.RowsAffected()
+	if rowsAffected == -1 {
+		return models.ErrAffectNoRows
+	}
+
+	return nil
+}
+
 func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

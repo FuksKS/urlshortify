@@ -6,6 +6,7 @@ import (
 
 type saver interface {
 	Save(cache map[string]string) error
+	SaveOneURL(info models.URLInfo) error
 	SaveURLs(urls []models.URLInfo) error
 }
 

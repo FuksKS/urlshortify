@@ -1,5 +1,9 @@
 package models
 
+import "errors"
+
+var ErrAffectNoRows = errors.New("affect no rows")
+
 type ShortenReq struct {
 	URL string `json:"url"`
 }

@@ -12,7 +12,9 @@ type URLHandler struct {
 }
 
 func New(st Storager, db pg.PgRepo, addr, baseURL string) *URLHandler {
-	st.SaveShortURL(addr, baseURL)
+	if err := st.SaveShortURL(addr, baseURL); err != nil {
+		return nil
+	}
 
 	return &URLHandler{
 		storage:  st,

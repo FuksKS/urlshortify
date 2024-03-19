@@ -43,17 +43,17 @@ func New(db pg.PgRepo, filePath string) (*Storage, error) {
 	return st, nil
 }
 
-func (s *Storage) SaveShortURL(shortURL, longURL string) {
+func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 	if _, ok := s.Cashe[shortURL]; !ok {
 		s.mapMutex.Lock()
 		s.Cashe[shortURL] = longURL
 		s.mapMutex.Unlock()
 	}
 
-	s.saver.SaveURLs([]models.URLInfo{{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL}})
+	return s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
 }
 
-func (s *Storage) SaveURLs(urls []models.URLInfo) {
+func (s *Storage) SaveURLs(urls []models.URLInfo) error {
 	for i := range urls {
 		if _, ok := s.Cashe[urls[i].ShortURL]; !ok {
 			s.mapMutex.Lock()
@@ -62,7 +62,7 @@ func (s *Storage) SaveURLs(urls []models.URLInfo) {
 		}
 	}
 
-	s.saver.SaveURLs(urls)
+	return s.saver.SaveURLs(urls)
 }
 
 func (s *Storage) GetLongURL(shortURL string) string {

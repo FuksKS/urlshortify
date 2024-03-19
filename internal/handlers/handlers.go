@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
@@ -47,12 +48,19 @@ func (h *URLHandler) generateShortURL() http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/plain")
+
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
-		h.storage.SaveShortURL(shortURL, longURL)
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusCreated)
+		err = h.storage.SaveShortURL(shortURL, longURL)
+		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
+			w.WriteHeader(http.StatusConflict)
+		} else if err != nil {
+			http.Error(w, "SaveShortURL error", http.StatusInternalServerError)
+			return
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
 
 		resp := fmt.Sprintf("http://%s/%s", h.HTTPAddr, shortURL)
 		w.Write([]byte(resp))
@@ -79,11 +87,18 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 			return
 		}
 
-		shortURL := urlmaker.MakeShortURL(req.URL)
-		h.storage.SaveShortURL(shortURL, req.URL)
-
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+
+		shortURL := urlmaker.MakeShortURL(req.URL)
+		err = h.storage.SaveShortURL(shortURL, req.URL)
+		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
+			w.WriteHeader(http.StatusConflict)
+		} else if err != nil {
+			http.Error(w, "SaveShortURL error", http.StatusInternalServerError)
+			return
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
 
 		fullHost := fmt.Sprintf("http://%s/%s", h.HTTPAddr, shortURL)
 		resp := models.ShortenResp{Result: fullHost}
@@ -121,7 +136,7 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
 		}
 
-		h.storage.SaveURLs(req)
+		err = h.storage.SaveURLs(req)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
