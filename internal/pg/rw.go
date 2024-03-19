@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"time"
 )
@@ -47,6 +48,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	}
 
 	rowsAffected := commandTag.RowsAffected()
+	fmt.Println("Rows affected: ", rowsAffected)
 	if rowsAffected == -1 {
 		return models.ErrAffectNoRows
 	}
