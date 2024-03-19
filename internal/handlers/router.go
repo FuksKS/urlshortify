@@ -1,17 +1,22 @@
 package handlers
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/FuksKS/urlshortify/internal/pg"
+	"github.com/go-chi/chi/v5"
+)
 
 type URLHandler struct {
 	storage  Storager
+	db       pg.PgRepo
 	HTTPAddr string
 }
 
-func New(st Storager, addr, baseURL string) *URLHandler {
-	st.SaveDefaultURL(addr, baseURL)
+func New(st Storager, db pg.PgRepo, addr, baseURL string) *URLHandler {
+	st.SaveShortURL(addr, baseURL)
 
 	return &URLHandler{
 		storage:  st,
+		db:       db,
 		HTTPAddr: addr,
 	}
 }
@@ -20,8 +25,11 @@ func (h *URLHandler) InitRouter() chi.Router {
 
 	r := chi.NewRouter()
 
-	r.Post("/", h.generateShortURL())
-	r.Get("/{id}", h.getURLID())
+	r.Post("/", withLogging(withGzip(h.generateShortURL())))
+	r.Get("/{id}", withLogging(h.getURLID()))
+	r.Post("/api/shorten", withLogging(withGzip(h.shorten())))
+	r.Post("/api/shorten/batch", withLogging(withGzip(h.shortenBatch())))
+	r.Get("/ping", withLogging(h.pingDB()))
 
 	return r
 }
