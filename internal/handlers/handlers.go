@@ -137,6 +137,10 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 		}
 
 		err = h.storage.SaveURLs(req)
+		if err != nil {
+			http.Error(w, "SaveURLs error", http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
