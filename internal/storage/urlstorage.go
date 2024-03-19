@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/google/uuid"
@@ -50,7 +51,16 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 		s.mapMutex.Unlock()
 	}
 
-	return s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
+	fmt.Println("short url: ", shortURL, "without err")
+	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
+
+	if err != nil {
+		fmt.Println("short url: ", shortURL, "err: ", err)
+	} else {
+		fmt.Println("short url: ", shortURL, "without err")
+	}
+
+	return err
 }
 
 func (s *Storage) SaveURLs(urls []models.URLInfo) error {

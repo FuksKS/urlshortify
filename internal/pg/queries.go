@@ -32,6 +32,6 @@ select
 	saveOneURLQuery = `
 insert into shortener (id, short_url, original_url)
 values ($1, $2, $3)
-on conflict do nothing;
+on conflict (short_url) do nothing;
 `
 )
