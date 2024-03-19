@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-const (
-	dbName    = "shortener"
-	tableName = "shortener"
-)
-
 type PgRepo struct {
 	DB *pgxpool.Pool
 }

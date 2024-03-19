@@ -47,7 +47,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	}
 
 	rowsAffected := commandTag.RowsAffected()
-	if rowsAffected == 0 {
+	if rowsAffected == -1 {
 		return models.ErrAffectNoRows
 	}
 
