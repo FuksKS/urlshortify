@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/handlers"
 	"github.com/FuksKS/urlshortify/internal/logger"
@@ -11,10 +12,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
 	cfg := config.Init()
+
+	_, cancel := context.WithCancel(context.Background())
 
 	if err := logger.Init(logger.LoggerLevelINFO); err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("init", "logger Initialize"))
@@ -54,4 +58,9 @@ func main() {
 			logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
 		}
 	}
+
+	time.Sleep(2 * time.Second)
+	cancel()
+
+	logger.Log.Info("Terminated. Goodbye")
 }
