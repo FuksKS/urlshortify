@@ -52,6 +52,7 @@ func (h *URLHandler) generateShortURL() http.HandlerFunc {
 
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
+
 		err = h.storage.SaveShortURL(shortURL, longURL)
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)

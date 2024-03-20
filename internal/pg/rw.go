@@ -44,6 +44,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 
 	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
 	if err != nil {
+		fmt.Println("SaveOneURL-Exec-err: ", err.Error())
 		return err
 	}
 

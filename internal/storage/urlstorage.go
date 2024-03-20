@@ -51,7 +51,13 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 		s.mapMutex.Unlock()
 	}
 
-	fmt.Println("short url: ", shortURL, "without err")
+	fmt.Println("Ща будем сохранять в базу урл ", shortURL)
+	allURLs := make([]string, 0, len(s.Cashe))
+	for shURL := range s.Cashe {
+		allURLs = append(allURLs, shURL)
+	}
+	fmt.Println("В кеше уже есть урллы: ", allURLs)
+
 	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
 
 	if err != nil {
