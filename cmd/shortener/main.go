@@ -29,7 +29,6 @@ func main() {
 			logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
 		}
 	}
-	defer db.DB.Close()
 
 	st, err := storage.New(db, cfg.FileStorage)
 	if err != nil {
@@ -58,6 +57,8 @@ func main() {
 	}
 
 	time.Sleep(2 * time.Second)
+
+	db.DB.Close()
 
 	logger.Log.Info("Terminated. Goodbye")
 }
