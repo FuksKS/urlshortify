@@ -50,7 +50,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 
 	rowsAffected := commandTag.RowsAffected()
 	fmt.Println("Rows affected: ", rowsAffected)
-	if rowsAffected == -1 {
+	if rowsAffected == 0 {
 		return models.ErrAffectNoRows
 	}
 
