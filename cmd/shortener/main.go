@@ -29,6 +29,7 @@ func main() {
 			logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
 		}
 	}
+	defer db.DB.Close()
 
 	st, err := storage.New(db, cfg.FileStorage)
 	if err != nil {
