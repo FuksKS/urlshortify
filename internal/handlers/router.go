@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/go-chi/chi/v5"
 )
@@ -11,16 +13,17 @@ type URLHandler struct {
 	HTTPAddr string
 }
 
-func New(st Storager, db pg.PgRepo, addr, baseURL string) *URLHandler {
-	if err := st.SaveShortURL(addr, baseURL); err != nil {
-		return nil
+func New(st Storager, db pg.PgRepo, addr, baseURL string) (*URLHandler, error) {
+	err := st.SaveShortURL(addr, baseURL)
+	if err != nil && !errors.Is(err, models.ErrAffectNoRows) {
+		return nil, err
 	}
 
 	return &URLHandler{
 		storage:  st,
 		db:       db,
 		HTTPAddr: addr,
-	}
+	}, nil
 }
 
 func (h *URLHandler) InitRouter() chi.Router {

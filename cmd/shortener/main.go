@@ -34,7 +34,10 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
 	}
 
-	handler := handlers.New(st, db, cfg.HTTPAddr, cfg.HTTPAddr)
+	handler, err := handlers.New(st, db, cfg.HTTPAddr, cfg.HTTPAddr)
+	if err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("init", "set handler"))
+	}
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 
