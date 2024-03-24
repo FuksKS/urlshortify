@@ -51,11 +51,6 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 		s.mapMutex.Unlock()
 	}
 
-	allURLs := make([]string, 0, len(s.Cashe))
-	for shURL := range s.Cashe {
-		allURLs = append(allURLs, shURL)
-	}
-
 	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
 
 	return err
