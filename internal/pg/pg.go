@@ -11,8 +11,8 @@ type PgRepo struct {
 	DB *pgxpool.Pool
 }
 
-func NewConnect(dbDSN string) (PgRepo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func NewConnect(ctx context.Context, dbDSN string) (PgRepo, error) {
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	config, err := pgxpool.ParseConfig(dbDSN)
@@ -20,25 +20,25 @@ func NewConnect(dbDSN string) (PgRepo, error) {
 		return PgRepo{}, err
 	}
 
-	db, err := pgxpool.NewWithConfig(ctx, config)
+	db, err := pgxpool.NewWithConfig(ctx2, config)
 	if err != nil {
 		return PgRepo{}, err
 	}
 
 	var exists bool
-	err = db.QueryRow(context.Background(), existDBQuery).Scan(&exists)
+	err = db.QueryRow(ctx2, existDBQuery).Scan(&exists)
 	if err != nil {
 		return PgRepo{}, err
 	}
 
 	if !exists {
-		_, err = db.Exec(ctx, createDBQuery)
+		_, err = db.Exec(ctx2, createDBQuery)
 		if err != nil {
 			return PgRepo{}, err
 		}
 	}
 
-	_, err = db.Exec(ctx, createTableQuery)
+	_, err = db.Exec(ctx2, createTableQuery)
 	if err != nil {
 		return PgRepo{}, err
 	}

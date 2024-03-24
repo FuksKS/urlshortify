@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/jackc/pgx/v5"
 	"time"
@@ -13,13 +14,13 @@ func (r *PgRepo) Read() (map[string]string, error) {
 
 	rows, err := r.DB.Query(ctx, getAllURLsQuery)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("PgRepo-Read-Query-err: %w", err)
 	}
 	defer rows.Close()
 
 	urlsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.URLInfo])
 	if err != nil && err != pgx.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("PgRepo-Read-CollectRows-err: %w", err)
 	}
 
 	m := make(map[string]string, len(urlsInfo))

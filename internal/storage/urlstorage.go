@@ -26,17 +26,17 @@ func New(db pg.PgRepo, filePath string) (*Storage, error) {
 	} else {
 		saver, err = newFileWriter(filePath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("storage-New-newFileWriter-err: %w", err)
 		}
 		reader, err = newFileReader(filePath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("storage-New-newFileReader-err: %w", err)
 		}
 	}
 
 	cashe, err := reader.Read()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("storage-New-reader-Read-err: %w", err)
 	}
 
 	st := &Storage{Cashe: cashe, mapMutex: &sync.Mutex{}, saver: saver, reader: reader}
@@ -51,20 +51,12 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 		s.mapMutex.Unlock()
 	}
 
-	fmt.Println("Ща будем сохранять в базу урл ", shortURL)
 	allURLs := make([]string, 0, len(s.Cashe))
 	for shURL := range s.Cashe {
 		allURLs = append(allURLs, shURL)
 	}
-	fmt.Println("В кеше уже есть урллы: ", allURLs)
 
 	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
-
-	if err != nil {
-		fmt.Println("short url: ", shortURL, "err: ", err)
-	} else {
-		fmt.Println("short url: ", shortURL, "without err")
-	}
 
 	return err
 }
@@ -87,7 +79,7 @@ func (s *Storage) GetLongURL(shortURL string) string {
 
 func (s *Storage) SaveCache() error {
 	if err := s.saver.Save(s.Cashe); err != nil {
-		return err
+		return fmt.Errorf("storage-SaveCache-Save-err: %w", err)
 	}
 
 	return nil

@@ -34,7 +34,4 @@ insert into shortener (id, short_url, original_url)
 values ($1, $2, $3)
 on conflict do nothing;
 `
-	selectOneURLQuery = `
-select short_url from shortener where original_url = $1;
-`
 )

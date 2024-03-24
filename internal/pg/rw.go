@@ -2,10 +2,8 @@ package pg
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
-	"github.com/jackc/pgx/v5"
 	"time"
 )
 
@@ -44,23 +42,14 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	var shortURL string
-	err := r.DB.QueryRow(ctx, selectOneURLQuery, info.OriginalURL).Scan(&shortURL)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		fmt.Println("SaveOneURL-selectOneURLQuery-err: ", err.Error())
-		return err
-	}
-
-	fmt.Println("SaveOneURL-selectOneURLQuery-shortURL: ", shortURL)
-
-	if shortURL != "" {
-		return models.ErrAffectNoRows
-	}
-
-	_, err = r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
 	if err != nil {
-		fmt.Println("SaveOneURL-Exec-err: ", err.Error())
-		return err
+		return fmt.Errorf("SaveOneURL-Exec-err: %w", err)
+	}
+
+	rowsAffected := commandTag.RowsAffected()
+	if rowsAffected == 0 {
+		return models.ErrAffectNoRows
 	}
 
 	return nil
@@ -73,7 +62,7 @@ func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
 		tx.Rollback(ctx)
-		return err
+		return fmt.Errorf("SaveURLs-BeginTx-err: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -81,10 +70,14 @@ func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
 		if err != nil {
 			tx.Rollback(ctx)
-			return err
+			return fmt.Errorf("SaveURLs-saveOneURLQuery-Exec-err: %w", err)
 		}
 	}
 
 	err = tx.Commit(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("SaveURLs-Commit-err: %w", err)
+	}
+
+	return nil
 }

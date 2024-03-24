@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/go-chi/chi/v5"
@@ -16,7 +17,7 @@ type URLHandler struct {
 func New(st Storager, db pg.PgRepo, addr, baseURL string) (*URLHandler, error) {
 	err := st.SaveShortURL(addr, baseURL)
 	if err != nil && !errors.Is(err, models.ErrAffectNoRows) {
-		return nil, err
+		return nil, fmt.Errorf("handlers-New-SaveDefaultURL-err: %w", err)
 	}
 
 	return &URLHandler{

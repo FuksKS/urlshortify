@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/handlers"
 	"github.com/FuksKS/urlshortify/internal/logger"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	cfg := config.Init()
 
 	if err := logger.Init(logger.LoggerLevelINFO); err != nil {
@@ -23,7 +25,7 @@ func main() {
 	var db pg.PgRepo
 	var err error
 	if cfg.DBDSN != "" {
-		db, err = pg.NewConnect(cfg.DBDSN)
+		db, err = pg.NewConnect(ctx, cfg.DBDSN)
 		if err != nil {
 			logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
 		}
@@ -62,6 +64,8 @@ func main() {
 		db.DB.Close()
 
 	}
+
+	cancel()
 
 	logger.Log.Info("Terminated. Goodbye")
 }

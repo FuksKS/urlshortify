@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/caarlos0/env/v6"
 	"log"
 )
@@ -63,7 +64,7 @@ func flagConfig() (flagAddr, flagBaseURL, flagFilePath, flagDBDSN string) {
 
 func envConfig(cfg *Config) error {
 	if err := env.Parse(cfg); err != nil {
-		return err
+		return fmt.Errorf("InitConfig-envConfig-err: %w", err)
 	}
 	return nil
 }
