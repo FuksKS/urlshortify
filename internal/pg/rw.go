@@ -42,16 +42,23 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	var shortURL string
+	err := r.DB.QueryRow(ctx, selectOneURLQuery).Scan(&shortURL)
 	if err != nil {
-		fmt.Println("SaveOneURL-Exec-err: ", err.Error())
+		fmt.Println("SaveOneURL-selectOneURLQuery-err: ", err.Error())
 		return err
 	}
 
-	rowsAffected := commandTag.RowsAffected()
-	fmt.Println("Rows affected: ", rowsAffected)
-	if rowsAffected == 0 {
+	fmt.Println("SaveOneURL-selectOneURLQuery-shortURL: ", shortURL)
+
+	if shortURL != "" {
 		return models.ErrAffectNoRows
+	}
+
+	_, err = r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	if err != nil {
+		fmt.Println("SaveOneURL-Exec-err: ", err.Error())
+		return err
 	}
 
 	return nil
@@ -66,6 +73,7 @@ func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 		tx.Rollback(ctx)
 		return err
 	}
+	defer tx.Rollback(ctx)
 
 	for i := range urls {
 		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)

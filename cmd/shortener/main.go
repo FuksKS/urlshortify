@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -56,9 +55,10 @@ func main() {
 		}
 	}
 
-	time.Sleep(2 * time.Second)
+	if cfg.DBDSN != "" {
+		db.DB.Close()
 
-	db.DB.Close()
+	}
 
 	logger.Log.Info("Terminated. Goodbye")
 }
