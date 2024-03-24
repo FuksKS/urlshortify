@@ -2,8 +2,10 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
+	"github.com/jackc/pgx/v5"
 	"time"
 )
 
@@ -44,7 +46,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 
 	var shortURL string
 	err := r.DB.QueryRow(ctx, selectOneURLQuery, info.OriginalURL).Scan(&shortURL)
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		fmt.Println("SaveOneURL-selectOneURLQuery-err: ", err.Error())
 		return err
 	}
