@@ -43,7 +43,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 func TestRouter(t *testing.T) {
 	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 
-	handler := New(st, pg.PgRepo{}, defaultAddr, "a")
+	handler, err := New(st, pg.PgRepo{}, defaultAddr, "a")
+	require.NoError(t, err)
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
