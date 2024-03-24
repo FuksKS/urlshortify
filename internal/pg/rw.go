@@ -43,7 +43,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	defer cancel()
 
 	var shortURL string
-	err := r.DB.QueryRow(ctx, selectOneURLQuery).Scan(&shortURL)
+	err := r.DB.QueryRow(ctx, selectOneURLQuery, info.OriginalURL).Scan(&shortURL)
 	if err != nil {
 		fmt.Println("SaveOneURL-selectOneURLQuery-err: ", err.Error())
 		return err
