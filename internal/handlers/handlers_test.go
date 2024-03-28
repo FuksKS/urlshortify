@@ -16,7 +16,7 @@ import (
 const (
 	practicumHost   = "https://practicum.yandex.ru/"
 	defaultFilePath = "/tmp/short-url-db.json"
-	defaultBaseURL  = "http://localhost:8080/"
+	defaultBaseURL  = "http://localhost:8080"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -69,7 +69,7 @@ func TestRouter(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultBaseURL + urlmaker.MakeShortURL(practicumHost),
+				respBody:    defaultBaseURL + "/" + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 	}
@@ -114,7 +114,7 @@ func Test_shorten(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultBaseURL + urlmaker.MakeShortURL(practicumHost),
+				respBody:    defaultBaseURL + "/" + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 	}
@@ -205,7 +205,6 @@ func Test_getShorten(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fmt.Println("tt.request", tt.request)
 			request := httptest.NewRequest(tt.method, tt.request, nil)
 			w := httptest.NewRecorder()
 			h := handler.getShorten()
@@ -250,7 +249,7 @@ func Test_shortenJSON(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "application/json",
-				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultBaseURL+urlmaker.MakeShortURL(practicumHost)),
+				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultBaseURL+"/"+urlmaker.MakeShortURL(practicumHost)),
 			},
 		},
 	}

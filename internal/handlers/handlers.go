@@ -48,7 +48,7 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
 
-		resp := fmt.Sprintf("%s%s", h.BaseURL, shortURL)
+		resp := fmt.Sprintf("%s/%s", h.BaseURL, shortURL)
 		w.Write([]byte(resp))
 	}
 }
@@ -74,7 +74,7 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 
-		fullHost := fmt.Sprintf("%s%s", h.BaseURL, shortURL)
+		fullHost := fmt.Sprintf("%s/%s", h.BaseURL, shortURL)
 		resp := models.ShortenResp{Result: fullHost}
 		respB, err := json.Marshal(resp)
 		if err != nil {
