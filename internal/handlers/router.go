@@ -1,27 +1,29 @@
 package handlers
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
+)
 
 type URLHandler struct {
-	storage  Storager
-	HTTPAddr string
+	storage Storager
+	BaseURL string
 }
 
-func New(st Storager, addr, baseURL string) *URLHandler {
-	st.SaveDefaultURL(addr, baseURL)
-
+func New(st Storager, baseURL string) *URLHandler {
 	return &URLHandler{
-		storage:  st,
-		HTTPAddr: addr,
+		storage: st,
+		BaseURL: baseURL,
 	}
 }
 
 func (h *URLHandler) InitRouter() chi.Router {
 
 	r := chi.NewRouter()
+	r.Use(withLogging, withGzip)
 
-	r.Post("/", h.generateShortURL())
-	r.Get("/{id}", h.getURLID())
+	r.Post("/", h.shorten())
+	r.Get("/{id}", h.getShorten())
+	r.Post("/api/shorten", h.shortenJSON())
 
 	return r
 }
