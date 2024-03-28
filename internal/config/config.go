@@ -8,7 +8,7 @@ import (
 
 const (
 	defaultAddr     = "localhost:8080"
-	defaultBaseURL  = "http://localhost:8000/qsd54gFg"
+	defaultBaseURL  = "http://localhost:8080/"
 	defaultFilePath = "/tmp/short-url-db.json"
 )
 

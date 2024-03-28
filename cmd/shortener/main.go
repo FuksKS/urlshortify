@@ -24,12 +24,12 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
 	}
 
-	handler := handlers.New(st, cfg.HTTPAddr, cfg.HTTPAddr)
+	handler := handlers.New(st, cfg.BaseURL)
 
 	logger.Log.Info("Running server", zap.String("address", cfg.HTTPAddr))
 
 	go func() {
-		if err := http.ListenAndServe(handler.HTTPAddr, handler.InitRouter()); err != nil {
+		if err := http.ListenAndServe(cfg.HTTPAddr, handler.InitRouter()); err != nil {
 			logger.Log.Fatal(err.Error(), zap.String("event", "start server"))
 		}
 	}()

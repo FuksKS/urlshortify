@@ -5,26 +5,25 @@ import (
 )
 
 type URLHandler struct {
-	storage  Storager
-	HTTPAddr string
+	storage Storager
+	BaseURL string
 }
 
-func New(st Storager, addr, baseURL string) *URLHandler {
-	st.SaveDefaultURL(addr, baseURL)
-
+func New(st Storager, baseURL string) *URLHandler {
 	return &URLHandler{
-		storage:  st,
-		HTTPAddr: addr,
+		storage: st,
+		BaseURL: baseURL,
 	}
 }
 
 func (h *URLHandler) InitRouter() chi.Router {
 
 	r := chi.NewRouter()
+	r.Use(withLogging, withGzip)
 
-	r.Post("/", withLogging(withGzip(h.generateShortURL())))
-	r.Get("/{id}", withLogging(h.getURLID()))
-	r.Post("/api/shorten", withLogging(withGzip(h.shorten())))
+	r.Post("/", h.shorten())
+	r.Get("/{id}", h.getShorten())
+	r.Post("/api/shorten", h.shortenJSON())
 
 	return r
 }

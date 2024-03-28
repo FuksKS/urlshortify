@@ -5,10 +5,10 @@ import (
 )
 
 type Storage struct {
-	Cashe    map[string]string
-	mapMutex *sync.Mutex
-	saver    saver
-	reader   reader
+	Cache      map[string]string
+	mapRWMutex *sync.RWMutex
+	saver      saver
+	reader     reader
 }
 
 func New(filePath string) (*Storage, error) {
@@ -26,31 +26,25 @@ func New(filePath string) (*Storage, error) {
 		return nil, err
 	}
 
-	st := &Storage{Cashe: cashe, mapMutex: &sync.Mutex{}, saver: saver, reader: reader}
+	st := &Storage{Cache: cashe, mapRWMutex: &sync.RWMutex{}, saver: saver, reader: reader}
 
 	return st, nil
 }
 
 func (s *Storage) SaveShortURL(shortURL, longURL string) {
-	if _, ok := s.Cashe[shortURL]; !ok {
-		s.mapMutex.Lock()
-		s.Cashe[shortURL] = longURL
-		s.mapMutex.Unlock()
+	if _, ok := s.Cache[shortURL]; !ok {
+		s.mapRWMutex.Lock()
+		s.Cache[shortURL] = longURL
+		s.mapRWMutex.Unlock()
 	}
 }
 
 func (s *Storage) GetLongURL(shortURL string) string {
-	return s.Cashe[shortURL]
-}
-
-func (s *Storage) SaveDefaultURL(defaultURL, shortDefaultURL string) {
-	s.mapMutex.Lock()
-	s.Cashe[shortDefaultURL] = defaultURL
-	s.mapMutex.Unlock()
+	return s.Cache[shortURL]
 }
 
 func (s *Storage) SaveCache() error {
-	if err := s.saver.Save(s.Cashe); err != nil {
+	if err := s.saver.Save(s.Cache); err != nil {
 		return err
 	}
 
