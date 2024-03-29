@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"compress/gzip"
+	"github.com/FuksKS/urlshortify/internal/logger"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 )
@@ -25,19 +27,32 @@ func (c *compressWriter) Header() http.Header {
 }
 
 func (c *compressWriter) Write(p []byte) (int, error) {
-	return c.zw.Write(p)
+	contentType := c.w.Header().Get("Content-Type")
+	logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
+
+	if contentType == "application/json" || contentType == "text/html" {
+		return c.zw.Write(p)
+	}
+
+	size, err := c.w.Write(p)
+	// обнулим буфер gzip чтоб не дописывалось ничего в ответ
+	c.zw.Reset(c.zw)
+	return size, err
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 {
-		c.w.Header().Set("Content-Encoding", "gzip")
+		contentType := c.w.Header().Get("Content-Type")
+		if contentType == "application/json" || contentType == "text/html" {
+			c.w.Header().Set("Content-Encoding", "gzip")
+		}
 	}
 	c.w.WriteHeader(statusCode)
 }
 
 // Close закрывает gzip.Writer и досылает все данные из буфера.
 func (c *compressWriter) Close() error {
-	return c.zw.Close()
+	return nil //c.zw.Close()
 }
 
 // compressReader реализует интерфейс io.ReadCloser и позволяет прозрачно для сервера
