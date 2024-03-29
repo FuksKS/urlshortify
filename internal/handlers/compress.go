@@ -31,13 +31,12 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 	logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
 
 	if contentType == "application/json" || contentType == "text/html" {
-		return c.zw.Write(p)
+		size, err := c.zw.Write(p)
+		c.zw.Close()
+		return size, err
 	}
 
-	size, err := c.w.Write(p)
-	// обнулим буфер gzip чтоб не дописывалось ничего в ответ
-	c.zw.Reset(c.zw)
-	return size, err
+	return c.w.Write(p)
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
@@ -52,7 +51,9 @@ func (c *compressWriter) WriteHeader(statusCode int) {
 
 // Close закрывает gzip.Writer и досылает все данные из буфера.
 func (c *compressWriter) Close() error {
-	return nil //c.zw.Close()
+	// обнулим буфер gzip чтоб не дописывалось ничего в ответ
+	c.zw.Reset(nil)
+	return nil //return c.zw.Close() не работает т.к. запаникуем
 }
 
 // compressReader реализует интерфейс io.ReadCloser и позволяет прозрачно для сервера
