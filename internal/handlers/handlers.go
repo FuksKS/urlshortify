@@ -105,11 +105,6 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 
 func (h *URLHandler) shortenBatch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Reading request body error", http.StatusInternalServerError)
@@ -139,7 +134,7 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 		resp := make([]models.URLInfo, len(req))
 		for i := range req {
 			resp[i].UUID = req[i].UUID
-			resp[i].ShortURL = fmt.Sprintf("http://%s/%s", h.BaseURL, req[i].ShortURL)
+			resp[i].ShortURL = fmt.Sprintf("%s/%s", h.BaseURL, req[i].ShortURL)
 		}
 
 		respB, err := json.Marshal(resp)
@@ -154,11 +149,6 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 
 func (h *URLHandler) pingDB() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
 		if err := h.db.DB.Ping(context.Background()); err != nil {
 			http.Error(w, "Ping db", http.StatusInternalServerError)
 			return
