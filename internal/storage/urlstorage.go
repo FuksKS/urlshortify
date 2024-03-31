@@ -9,10 +9,10 @@ import (
 )
 
 type Storage struct {
-	Cashe    map[string]string
-	mapMutex *sync.Mutex
-	saver    saver
-	reader   reader
+	Cache      map[string]string
+	mapRWMutex *sync.RWMutex
+	saver      saver
+	reader     reader
 }
 
 func New(db pg.PgRepo, filePath string) (*Storage, error) {
@@ -39,16 +39,16 @@ func New(db pg.PgRepo, filePath string) (*Storage, error) {
 		return nil, fmt.Errorf("storage-New-reader-Read-err: %w", err)
 	}
 
-	st := &Storage{Cashe: cashe, mapMutex: &sync.Mutex{}, saver: saver, reader: reader}
+	st := &Storage{Cache: cashe, mapRWMutex: &sync.RWMutex{}, saver: saver, reader: reader}
 
 	return st, nil
 }
 
 func (s *Storage) SaveShortURL(shortURL, longURL string) error {
-	if _, ok := s.Cashe[shortURL]; !ok {
-		s.mapMutex.Lock()
-		s.Cashe[shortURL] = longURL
-		s.mapMutex.Unlock()
+	if _, ok := s.Cache[shortURL]; !ok {
+		s.mapRWMutex.Lock()
+		s.Cache[shortURL] = longURL
+		s.mapRWMutex.Unlock()
 	}
 
 	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
@@ -58,10 +58,10 @@ func (s *Storage) SaveShortURL(shortURL, longURL string) error {
 
 func (s *Storage) SaveURLs(urls []models.URLInfo) error {
 	for i := range urls {
-		if _, ok := s.Cashe[urls[i].ShortURL]; !ok {
-			s.mapMutex.Lock()
-			s.Cashe[urls[i].ShortURL] = urls[i].OriginalURL
-			s.mapMutex.Unlock()
+		if _, ok := s.Cache[urls[i].ShortURL]; !ok {
+			s.mapRWMutex.Lock()
+			s.Cache[urls[i].ShortURL] = urls[i].OriginalURL
+			s.mapRWMutex.Unlock()
 		}
 	}
 
@@ -69,13 +69,12 @@ func (s *Storage) SaveURLs(urls []models.URLInfo) error {
 }
 
 func (s *Storage) GetLongURL(shortURL string) string {
-	return s.Cashe[shortURL]
+	return s.Cache[shortURL]
 }
 
 func (s *Storage) SaveCache() error {
-	if err := s.saver.Save(s.Cashe); err != nil {
+	if err := s.saver.Save(s.Cache); err != nil {
 		return fmt.Errorf("storage-SaveCache-Save-err: %w", err)
 	}
-
 	return nil
 }

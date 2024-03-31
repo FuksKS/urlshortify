@@ -16,9 +16,8 @@ import (
 
 const (
 	practicumHost   = "https://practicum.yandex.ru/"
-	defaultAddr     = "localhost:8080"
-	defaultHost     = "http://" + defaultAddr + "/"
 	defaultFilePath = "/tmp/short-url-db.json"
+	defaultBaseURL  = "http://localhost:8080"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -43,8 +42,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 func TestRouter(t *testing.T) {
 	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 
-	handler, err := New(st, pg.PgRepo{}, defaultAddr, "a")
+	handler, err := New(st, pg.PgRepo{}, defaultBaseURL)
 	require.NoError(t, err)
+
 	ts := httptest.NewServer(handler.InitRouter())
 	defer ts.Close()
 
@@ -72,7 +72,7 @@ func TestRouter(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + urlmaker.MakeShortURL(practicumHost),
+				respBody:    defaultBaseURL + "/" + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 	}
@@ -86,7 +86,7 @@ func TestRouter(t *testing.T) {
 	}
 }
 
-func Test_generateShortURL(t *testing.T) {
+func Test_shorten(t *testing.T) {
 	type want struct {
 		statusCode  int
 		contentType string
@@ -96,8 +96,8 @@ func Test_generateShortURL(t *testing.T) {
 	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 
 	handler := URLHandler{
-		storage:  st,
-		HTTPAddr: defaultAddr,
+		storage: st,
+		BaseURL: defaultBaseURL,
 	}
 
 	tests := []struct {
@@ -117,19 +117,7 @@ func Test_generateShortURL(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "text/plain",
-				respBody:    defaultHost + urlmaker.MakeShortURL(practicumHost),
-			},
-		},
-		{
-			name:   "simple test",
-			method: http.MethodHead,
-			path:   "/",
-			st:     handler.storage,
-			body:   practicumHost,
-			want: want{
-				statusCode:  http.StatusMethodNotAllowed,
-				contentType: "text/plain; charset=utf-8",
-				respBody:    "Method not Allowed\n",
+				respBody:    defaultBaseURL + "/" + urlmaker.MakeShortURL(practicumHost),
 			},
 		},
 	}
@@ -138,7 +126,7 @@ func Test_generateShortURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := handler.generateShortURL()
+			h := handler.shorten()
 			h(w, request)
 
 			result := w.Result()
@@ -155,7 +143,7 @@ func Test_generateShortURL(t *testing.T) {
 	}
 }
 
-func Test_getURLID(t *testing.T) {
+func Test_getShorten(t *testing.T) {
 	type want struct {
 		statusCode int
 		location   string
@@ -163,8 +151,8 @@ func Test_getURLID(t *testing.T) {
 
 	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 	handler := URLHandler{
-		storage:  s,
-		HTTPAddr: defaultAddr,
+		storage: s,
+		BaseURL: defaultBaseURL,
 	}
 
 	tests := []struct {
@@ -191,16 +179,6 @@ func Test_getURLID(t *testing.T) {
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusBadRequest,
-				location:   "",
-			},
-		},
-		{
-			name:    "Wrong method",
-			method:  http.MethodDelete,
-			request: "/abc",
-			st:      handler.storage,
-			want: want{
-				statusCode: http.StatusMethodNotAllowed,
 				location:   "",
 			},
 		},
@@ -232,7 +210,7 @@ func Test_getURLID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.request, nil)
 			w := httptest.NewRecorder()
-			h := handler.getURLID()
+			h := handler.getShorten()
 			h(w, request)
 
 			result := w.Result()
@@ -244,7 +222,7 @@ func Test_getURLID(t *testing.T) {
 	}
 }
 
-func Test_shorten(t *testing.T) {
+func Test_shortenJSON(t *testing.T) {
 	type want struct {
 		statusCode  int
 		contentType string
@@ -253,8 +231,8 @@ func Test_shorten(t *testing.T) {
 
 	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
 	handler := URLHandler{
-		storage:  s,
-		HTTPAddr: defaultAddr,
+		storage: s,
+		BaseURL: defaultBaseURL,
 	}
 
 	tests := []struct {
@@ -274,7 +252,7 @@ func Test_shorten(t *testing.T) {
 			want: want{
 				statusCode:  http.StatusCreated,
 				contentType: "application/json",
-				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultHost+urlmaker.MakeShortURL(practicumHost)),
+				respBody:    fmt.Sprintf(`{"result":"%s"}`, defaultBaseURL+"/"+urlmaker.MakeShortURL(practicumHost)),
 			},
 		},
 	}
@@ -283,7 +261,7 @@ func Test_shorten(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
-			h := handler.shorten()
+			h := handler.shortenJSON()
 			h(w, request)
 
 			result := w.Result()

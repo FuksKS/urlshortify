@@ -32,8 +32,8 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 }
 
 // withLogging — middleware-логер для входящих HTTP-запросов.
-func withLogging(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func withLogging(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
 		responseData := &responseData{
@@ -56,23 +56,13 @@ func withLogging(h http.HandlerFunc) http.HandlerFunc {
 			zap.Int("status", responseData.status),
 			zap.Int("size", responseData.size),
 		)
-	}
+	})
 }
 
 // withGzip - middleware поддерживающий gzip компрессию и декомпрессию
-func withGzip(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		/*
-			contentType := r.Header.Get("Content-Type")
-			logger.Log.Info("withGzip middleware", zap.String("contentType", contentType))
-			if contentType != "application/json" && contentType != "text/html" {
-				h.ServeHTTP(w, r)
-				return
-			}
-		*/
-
+func withGzip(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
-
 		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
 		clientSupportsGzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 		logger.Log.Info("withGzip middleware", zap.String("Accept-Encoding", r.Header.Get("Accept-Encoding")))
@@ -96,5 +86,5 @@ func withGzip(h http.HandlerFunc) http.HandlerFunc {
 
 		h.ServeHTTP(ow, r)
 
-	}
+	})
 }
