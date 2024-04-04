@@ -10,20 +10,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
-	"strings"
 )
 
 func (h *URLHandler) getShorten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		if id == "" {
-			// при локальных тестах chi.RouteContext(r.Context()) = nil
-			parts := strings.Split(r.URL.Path, "/") // parts[0] == ""
-			if len(parts) != 2 {
-				http.Error(w, "Incorrect path", http.StatusBadRequest)
-			}
-			id = parts[1]
-		}
 
 		if longURL := h.storage.GetLongURL(id); longURL != "" {
 			http.Redirect(w, r, longURL, http.StatusTemporaryRedirect)

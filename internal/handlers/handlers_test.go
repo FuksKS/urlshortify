@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -165,7 +167,7 @@ func Test_getShorten(t *testing.T) {
 		{
 			name:    "simple test",
 			method:  http.MethodGet,
-			request: "/" + urlmaker.MakeShortURL(practicumHost),
+			request: urlmaker.MakeShortURL(practicumHost),
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusTemporaryRedirect,
@@ -175,7 +177,7 @@ func Test_getShorten(t *testing.T) {
 		{
 			name:    "Unknown request",
 			method:  http.MethodGet,
-			request: "/abc",
+			request: "abc",
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusBadRequest,
@@ -185,17 +187,7 @@ func Test_getShorten(t *testing.T) {
 		{
 			name:    "Wrong path /abc/",
 			method:  http.MethodGet,
-			request: "/abc/",
-			st:      handler.storage,
-			want: want{
-				statusCode: http.StatusBadRequest,
-				location:   "",
-			},
-		},
-		{
-			name:    "Wrong path /",
-			method:  http.MethodGet,
-			request: "/",
+			request: "abc/",
 			st:      handler.storage,
 			want: want{
 				statusCode: http.StatusBadRequest,
@@ -208,7 +200,15 @@ func Test_getShorten(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, tt.request, nil)
+			request := httptest.NewRequest(tt.method, "/"+tt.request, nil)
+
+			routeCtx := chi.NewRouteContext()
+			routeCtx.URLParams.Add("id", tt.request)
+
+			// Установка объекта RouteContext в контекст запроса чтоб можно было достать параметр id
+			ctx := context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
+			request = request.WithContext(ctx)
+
 			w := httptest.NewRecorder()
 			h := handler.getShorten()
 			h(w, request)
