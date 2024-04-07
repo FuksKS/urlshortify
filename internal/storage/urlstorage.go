@@ -20,6 +20,7 @@ func New(ctx context.Context, filePath, DBDSN string) (*Storage, error) {
 
 	db, err := pg.NewConnect(ctx, DBDSN)
 	if err != nil {
+		fmt.Println("pg.NewConnect, DBDSN:", DBDSN, err.Error())
 		return nil, fmt.Errorf("storage-New-pg.NewConnect-err: %w", err)
 	}
 
@@ -39,6 +40,7 @@ func New(ctx context.Context, filePath, DBDSN string) (*Storage, error) {
 
 	cache, err := reader.ReadAll(ctx)
 	if err != nil {
+		fmt.Println("reader.ReadAll:", err.Error())
 		return nil, fmt.Errorf("storage-New-reader-Read-err: %w", err)
 	}
 
