@@ -17,7 +17,7 @@ func NewConnect(ctx context.Context, dbDSN string) (PgRepo, error) {
 		return PgRepo{}, nil
 	}
 
-	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	fmt.Println("Запускаю бд")

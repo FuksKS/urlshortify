@@ -13,10 +13,10 @@ func (r *PgRepo) Save(_ context.Context, _ map[string]models.URLInfo) error {
 }
 
 func (r *PgRepo) SaveOneURL(ctx context.Context, info models.URLInfo) error {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL, info.UserID)
+	commandTag, err := r.DB.Exec(ctx2, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL, info.UserID)
 	if err != nil {
 		return fmt.Errorf("SaveOneURL-Exec-err: %w", err)
 	}
@@ -30,25 +30,25 @@ func (r *PgRepo) SaveOneURL(ctx context.Context, info models.URLInfo) error {
 }
 
 func (r *PgRepo) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	tx, err := r.DB.Begin(ctx)
+	tx, err := r.DB.Begin(ctx2)
 	if err != nil {
-		tx.Rollback(ctx)
+		tx.Rollback(ctx2)
 		return fmt.Errorf("SaveURLs-BeginTx-err: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(ctx2)
 
 	for i := range urls {
-		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
+		_, err := tx.Exec(ctx2, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
 		if err != nil {
-			tx.Rollback(ctx)
+			tx.Rollback(ctx2)
 			return fmt.Errorf("SaveURLs-saveOneURLQuery-Exec-err: %w", err)
 		}
 	}
 
-	err = tx.Commit(ctx)
+	err = tx.Commit(ctx2)
 	if err != nil {
 		return fmt.Errorf("SaveURLs-Commit-err: %w", err)
 	}

@@ -9,10 +9,10 @@ import (
 )
 
 func (r *PgRepo) ReadAll(ctx context.Context) (map[string]models.URLInfo, error) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	rows, err := r.DB.Query(ctx, getAllURLsQuery)
+	rows, err := r.DB.Query(ctx2, getAllURLsQuery)
 	if err != nil {
 		return nil, fmt.Errorf("PgRepo-Read-Query-err: %w", err)
 	}
@@ -32,10 +32,10 @@ func (r *PgRepo) ReadAll(ctx context.Context) (map[string]models.URLInfo, error)
 }
 
 func (r *PgRepo) GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	rows, err := r.DB.Query(ctx, getUsersURLsQuery, userID)
+	rows, err := r.DB.Query(ctx2, getUsersURLsQuery, userID)
 	if err != nil {
 		return nil, fmt.Errorf("PgRepo-GetUsersURLs-Query-err: %w", err)
 	}
