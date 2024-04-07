@@ -58,3 +58,8 @@ func (r *PgRepo) PingDB(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (r *PgRepo) Shutdown(_ context.Context) error {
+	r.DB.Close()
+	return nil
+}

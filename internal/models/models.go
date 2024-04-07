@@ -2,6 +2,10 @@ package models
 
 import "errors"
 
+type ContextKey string
+
+const UserIDKey ContextKey = "user_id"
+
 var ErrAffectNoRows = errors.New("affect no rows")
 
 type ShortenReq struct {

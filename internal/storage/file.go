@@ -115,3 +115,8 @@ func (r *FileReader) PingDB(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (r *FileReader) Shutdown(_ context.Context) error {
+	// Для имплементации
+	return nil
+}

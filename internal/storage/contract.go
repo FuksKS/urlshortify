@@ -16,4 +16,5 @@ type reader interface {
 	GetLongURL(_ context.Context, shortURL string) (models.URLInfo, error)
 	GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error)
 	PingDB(ctx context.Context) error
+	Shutdown(_ context.Context) error
 }

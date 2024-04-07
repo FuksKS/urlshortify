@@ -102,3 +102,7 @@ func (s *Storage) SaveCache(ctx context.Context) error {
 func (s *Storage) PingDB(ctx context.Context) error {
 	return s.reader.PingDB(ctx)
 }
+
+func (s *Storage) Shutdown(ctx context.Context) error {
+	return s.reader.Shutdown(ctx)
+}

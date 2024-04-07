@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/FuksKS/urlshortify/internal/logger"
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/token"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -127,7 +128,7 @@ func WithAuth(h http.Handler) http.Handler {
 		var userID string
 		if tokenWithUser != nil {
 			if tokenWithUser.Value != "" {
-				userID, err = token.GetUserId(tokenWithUser.Value)
+				userID, err = token.GetUserID(tokenWithUser.Value)
 				if err != nil {
 					http.Error(w, "Get userID from token error", http.StatusInternalServerError)
 				}
@@ -146,7 +147,8 @@ func WithAuth(h http.Handler) http.Handler {
 			UserID:         userID,
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", userID)
+		userForContext := models.ContextKey(userID)
+		ctx := context.WithValue(r.Context(), models.UserIDKey, userForContext)
 		r = r.WithContext(ctx)
 
 		h.ServeHTTP(&aw, r)

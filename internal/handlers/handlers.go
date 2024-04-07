@@ -12,6 +12,8 @@ import (
 	"net/http"
 )
 
+type contextKey string
+
 func (h *URLHandler) getShorten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -48,7 +50,7 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
 
-		userID, ok := ctx.Value("user_id").(string)
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
 		if !ok {
 			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
@@ -57,7 +59,7 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 			UUID:        uuid.New().String(),
 			ShortURL:    shortURL,
 			OriginalURL: longURL,
-			UserID:      userID,
+			UserID:      string(userID),
 		}
 
 		err = h.storage.SaveShortURL(ctx, oneURLInfo)
@@ -95,7 +97,7 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		shortURL := urlmaker.MakeShortURL(req.URL)
-		userID, ok := ctx.Value("user_id").(string)
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
 		if !ok {
 			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
@@ -104,7 +106,7 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 			UUID:        uuid.New().String(),
 			ShortURL:    shortURL,
 			OriginalURL: req.URL,
-			UserID:      userID,
+			UserID:      string(userID),
 		}
 
 		err = h.storage.SaveShortURL(ctx, oneURLInfo)
@@ -146,7 +148,7 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 			return
 		}
 
-		userID, ok := ctx.Value("user_id").(string)
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
 		if !ok {
 			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
@@ -154,7 +156,7 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 		for i := range req {
 			req[i].UUID = uuid.New().String()
 			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
-			req[i].UserID = userID
+			req[i].UserID = string(userID)
 		}
 
 		err = h.storage.SaveURLs(ctx, req)
@@ -187,12 +189,12 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 		ctx := r.Context()
 
 		// Предположим, что user_id сохранен в контексте под ключом "user_id"
-		userID, ok := ctx.Value("user_id").(string)
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
 		if !ok {
-			// Обработка случая, когда значение не найдено в контексте или имеет неправильный тип
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
 
-		usersURLsInfo, err := h.storage.GetUsersURLs(ctx, userID)
+		usersURLsInfo, err := h.storage.GetUsersURLs(ctx, string(userID))
 		if err != nil {
 			http.Error(w, "Get users URLs error", http.StatusInternalServerError)
 		}

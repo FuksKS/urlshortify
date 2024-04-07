@@ -59,3 +59,8 @@ func (c *Cache) PingDB(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (c *Cache) Shutdown(_ context.Context) error {
+	// Для имплементации
+	return nil
+}

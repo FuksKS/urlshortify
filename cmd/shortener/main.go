@@ -49,6 +49,10 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
 	}
 
+	if err = st.Shutdown(ctx); err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "storage Shutdown"))
+	}
+	
 	cancel()
 
 	logger.Log.Info("Terminated. Goodbye")
