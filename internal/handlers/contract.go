@@ -1,10 +1,15 @@
 package handlers
 
-import "github.com/FuksKS/urlshortify/internal/models"
+import (
+	"context"
+	"github.com/FuksKS/urlshortify/internal/models"
+)
 
 type Storager interface {
-	GetLongURL(shortURL string) string
-	SaveShortURL(shortURL, longURL string) error
-	SaveURLs(urls []models.URLInfo) error
-	SaveCache() error
+	GetLongURL(ctx context.Context, shortURL string) (models.URLInfo, error)
+	GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error)
+	SaveShortURL(ctx context.Context, info models.URLInfo) error
+	SaveURLs(ctx context.Context, urls []models.URLInfo) error
+	SaveCache(ctx context.Context) error
+	PingDB(ctx context.Context) error
 }

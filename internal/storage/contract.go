@@ -1,15 +1,19 @@
 package storage
 
 import (
+	"context"
 	"github.com/FuksKS/urlshortify/internal/models"
 )
 
 type saver interface {
-	Save(cache map[string]string) error
-	SaveOneURL(info models.URLInfo) error
-	SaveURLs(urls []models.URLInfo) error
+	Save(ctx context.Context, cache map[string]models.URLInfo) error
+	SaveOneURL(ctx context.Context, info models.URLInfo) error
+	SaveURLs(ctx context.Context, urls []models.URLInfo) error
 }
 
 type reader interface {
-	Read() (map[string]string, error)
+	ReadAll(ctx context.Context) (map[string]models.URLInfo, error)
+	GetLongURL(_ context.Context, shortURL string) (models.URLInfo, error)
+	GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error)
+	PingDB(ctx context.Context) error
 }

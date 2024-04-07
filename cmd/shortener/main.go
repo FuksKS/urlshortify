@@ -5,7 +5,6 @@ import (
 	"github.com/FuksKS/urlshortify/internal/config"
 	"github.com/FuksKS/urlshortify/internal/handlers"
 	"github.com/FuksKS/urlshortify/internal/logger"
-	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"go.uber.org/zap"
 	"net/http"
@@ -22,21 +21,12 @@ func main() {
 		logger.Log.Fatal(err.Error(), zap.String("init", "logger Initialize"))
 	}
 
-	var db pg.PgRepo
-	var err error
-	if cfg.DBDSN != "" {
-		db, err = pg.NewConnect(ctx, cfg.DBDSN)
-		if err != nil {
-			logger.Log.Fatal(err.Error(), zap.String("init", "set db"))
-		}
-	}
-
-	st, err := storage.New(db, cfg.FileStorage)
+	st, err := storage.New(ctx, cfg.FileStorage, cfg.DBDSN)
 	if err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("init", "set storage"))
 	}
 
-	handler, err := handlers.New(st, db, cfg.BaseURL)
+	handler, err := handlers.New(st, cfg.BaseURL)
 	if err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("init", "set handler"))
 	}
@@ -54,15 +44,9 @@ func main() {
 	<-done
 
 	logger.Log.Info("Stop server", zap.String("address", cfg.HTTPAddr))
-	if cfg.DBDSN == "" { // Записываем в файл только если нет бд
-		if err = st.SaveCache(); err != nil {
-			logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
-		}
-	}
 
-	if cfg.DBDSN != "" {
-		db.DB.Close()
-
+	if err = st.SaveCache(ctx); err != nil {
+		logger.Log.Fatal(err.Error(), zap.String("event", "save cache to storage"))
 	}
 
 	cancel()

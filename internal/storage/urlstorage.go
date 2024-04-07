@@ -1,24 +1,27 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
-	"github.com/google/uuid"
-	"sync"
 )
 
 type Storage struct {
-	Cache      map[string]string
-	mapRWMutex *sync.RWMutex
-	saver      saver
-	reader     reader
+	cacheSaver  saver
+	cacheReader reader
+	saver       saver
+	reader      reader
 }
 
-func New(db pg.PgRepo, filePath string) (*Storage, error) {
-	var saver saver
-	var reader reader
-	var err error
+func New(ctx context.Context, filePath, DBDSN string) (*Storage, error) {
+	var saver, cacheSaver saver
+	var reader, cacheReader reader
+
+	db, err := pg.NewConnect(ctx, DBDSN)
+	if err != nil {
+		return nil, fmt.Errorf("storage-New-pg.NewConnect-err: %w", err)
+	}
 
 	if db.DB != nil {
 		reader = &db
@@ -34,47 +37,68 @@ func New(db pg.PgRepo, filePath string) (*Storage, error) {
 		}
 	}
 
-	cashe, err := reader.Read()
+	cache, err := reader.ReadAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("storage-New-reader-Read-err: %w", err)
 	}
 
-	st := &Storage{Cache: cashe, mapRWMutex: &sync.RWMutex{}, saver: saver, reader: reader}
+	c := NewCache(cache)
+	cacheSaver = c
+	cacheReader = c
+
+	st := &Storage{cacheSaver: cacheSaver, cacheReader: cacheReader, saver: saver, reader: reader}
 
 	return st, nil
 }
 
-func (s *Storage) SaveShortURL(shortURL, longURL string) error {
-	if _, ok := s.Cache[shortURL]; !ok {
-		s.mapRWMutex.Lock()
-		s.Cache[shortURL] = longURL
-		s.mapRWMutex.Unlock()
+func (s *Storage) SaveShortURL(ctx context.Context, info models.URLInfo) error {
+	err := s.cacheSaver.SaveOneURL(ctx, info)
+	if err != nil {
+		return fmt.Errorf("storage-SaveShortURL-cacheSaver-SaveOneURL-err: %w", err)
 	}
 
-	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
-
-	return err
-}
-
-func (s *Storage) SaveURLs(urls []models.URLInfo) error {
-	for i := range urls {
-		if _, ok := s.Cache[urls[i].ShortURL]; !ok {
-			s.mapRWMutex.Lock()
-			s.Cache[urls[i].ShortURL] = urls[i].OriginalURL
-			s.mapRWMutex.Unlock()
-		}
+	err = s.saver.SaveOneURL(ctx, info)
+	if err != nil {
+		return fmt.Errorf("storage-SaveShortURL-saver-SaveOneURL-err: %w", err)
 	}
 
-	return s.saver.SaveURLs(urls)
+	return nil
 }
 
-func (s *Storage) GetLongURL(shortURL string) string {
-	return s.Cache[shortURL]
+func (s *Storage) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
+	err := s.cacheSaver.SaveURLs(ctx, urls)
+	if err != nil {
+		return fmt.Errorf("storage-SaveURLs-cacheSaver-SaveURLs-err: %w", err)
+	}
+
+	err = s.saver.SaveURLs(ctx, urls)
+	if err != nil {
+		return fmt.Errorf("storage-SaveURLs-saver-SaveURLs-err: %w", err)
+	}
+
+	return nil
 }
 
-func (s *Storage) SaveCache() error {
-	if err := s.saver.Save(s.Cache); err != nil {
+func (s *Storage) GetLongURL(ctx context.Context, shortURL string) (models.URLInfo, error) {
+	return s.cacheReader.GetLongURL(ctx, shortURL)
+}
+
+func (s *Storage) GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error) {
+	return s.reader.GetUsersURLs(ctx, userID)
+}
+
+func (s *Storage) SaveCache(ctx context.Context) error {
+	cache, err := s.cacheReader.ReadAll(ctx)
+	if err != nil {
+		return fmt.Errorf("storage-SaveCache-cacheReader-ReadAll-err: %w", err)
+	}
+
+	if err := s.saver.Save(ctx, cache); err != nil {
 		return fmt.Errorf("storage-SaveCache-Save-err: %w", err)
 	}
 	return nil
+}
+
+func (s *Storage) PingDB(ctx context.Context) error {
+	return s.reader.PingDB(ctx)
 }

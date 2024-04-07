@@ -7,42 +7,16 @@ import (
 	"time"
 )
 
-func (r *PgRepo) Save(cache map[string]string) error {
+func (r *PgRepo) Save(_ context.Context, _ map[string]models.URLInfo) error {
 	// Для имплементации. За 1 раз кэш сохраняем только в файл
-	/*
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
-		allURLs := make([]models.URLInfo, 0, len(cache))
-
-		for shortURL, originalURL := range cache {
-			allURLs = append(allURLs, models.URLInfo{
-				UUID:        uuid.New().String(),
-				ShortURL:    shortURL,
-				OriginalURL: originalURL,
-			})
-		}
-
-		allURLsByte, err := json.Marshal(allURLs)
-		if err != nil {
-			return err
-		}
-
-		_, err = r.DB.Exec(ctx, saveCashQuery, string(allURLsByte))
-		if err != nil {
-			return err
-		}
-
-	*/
-
 	return nil
 }
 
-func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (r *PgRepo) SaveOneURL(ctx context.Context, info models.URLInfo) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL, info.UserID)
 	if err != nil {
 		return fmt.Errorf("SaveOneURL-Exec-err: %w", err)
 	}
@@ -55,8 +29,8 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	return nil
 }
 
-func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (r *PgRepo) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	tx, err := r.DB.Begin(ctx)

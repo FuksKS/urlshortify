@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/FuksKS/urlshortify/internal/pg"
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/go-chi/chi/v5"
@@ -42,9 +42,10 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (
 }
 
 func TestRouter(t *testing.T) {
-	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
+	ctx := context.Background()
+	st, _ := storage.New(ctx, defaultFilePath, "")
 
-	handler, err := New(st, pg.PgRepo{}, defaultBaseURL)
+	handler, err := New(st, defaultBaseURL)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(handler.InitRouter())
@@ -95,7 +96,8 @@ func Test_shorten(t *testing.T) {
 		respBody    string
 	}
 
-	st, _ := storage.New(pg.PgRepo{}, defaultFilePath)
+	ctx := context.Background()
+	st, _ := storage.New(ctx, defaultFilePath, "")
 
 	handler := URLHandler{
 		storage: st,
@@ -127,6 +129,10 @@ func Test_shorten(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
+
+			ctx := context.WithValue(context.Background(), "user_id", "1")
+			request = request.WithContext(ctx)
+
 			w := httptest.NewRecorder()
 			h := handler.shorten()
 			h(w, request)
@@ -151,9 +157,10 @@ func Test_getShorten(t *testing.T) {
 		location   string
 	}
 
-	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
+	ctx := context.Background()
+	st, _ := storage.New(ctx, defaultFilePath, "")
 	handler := URLHandler{
-		storage: s,
+		storage: st,
 		BaseURL: defaultBaseURL,
 	}
 
@@ -196,7 +203,12 @@ func Test_getShorten(t *testing.T) {
 		},
 	}
 
-	handler.storage.SaveShortURL(urlmaker.MakeShortURL(practicumHost), practicumHost)
+	info := models.URLInfo{
+		ShortURL:    urlmaker.MakeShortURL(practicumHost),
+		OriginalURL: practicumHost,
+	}
+
+	handler.storage.SaveShortURL(ctx, info)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -206,8 +218,9 @@ func Test_getShorten(t *testing.T) {
 			routeCtx.URLParams.Add("id", tt.request)
 
 			// Установка объекта RouteContext в контекст запроса чтоб можно было достать параметр id
-			ctx := context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
-			request = request.WithContext(ctx)
+			ctx = context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
+			ctx2 := context.WithValue(ctx, "user_id", "1")
+			request = request.WithContext(ctx2)
 
 			w := httptest.NewRecorder()
 			h := handler.getShorten()
@@ -229,9 +242,11 @@ func Test_shortenJSON(t *testing.T) {
 		respBody    string
 	}
 
-	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
+	ctx := context.Background()
+	st, _ := storage.New(ctx, defaultFilePath, "")
+
 	handler := URLHandler{
-		storage: s,
+		storage: st,
 		BaseURL: defaultBaseURL,
 	}
 
@@ -260,6 +275,9 @@ func Test_shortenJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			ctx := context.WithValue(context.Background(), "user_id", "1")
+			request = request.WithContext(ctx)
+
 			w := httptest.NewRecorder()
 			h := handler.shortenJSON()
 			h(w, request)

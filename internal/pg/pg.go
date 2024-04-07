@@ -12,6 +12,10 @@ type PgRepo struct {
 }
 
 func NewConnect(ctx context.Context, dbDSN string) (PgRepo, error) {
+	if dbDSN == "" {
+		return PgRepo{}, nil
+	}
+
 	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 

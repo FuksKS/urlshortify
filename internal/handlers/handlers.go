@@ -1,23 +1,30 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 )
 
 func (h *URLHandler) getShorten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		id := chi.URLParam(r, "id")
 
-		if longURL := h.storage.GetLongURL(id); longURL != "" {
-			http.Redirect(w, r, longURL, http.StatusTemporaryRedirect)
+		oneURLInfo, err := h.storage.GetLongURL(ctx, id)
+		if err != nil {
+			http.Error(w, "GetLongURL error", http.StatusInternalServerError)
+		}
+
+		if oneURLInfo.OriginalURL != "" {
+			http.Redirect(w, r, oneURLInfo.OriginalURL, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -28,6 +35,8 @@ func (h *URLHandler) getShorten() http.HandlerFunc {
 
 func (h *URLHandler) shorten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Reading request body error", http.StatusInternalServerError)
@@ -39,7 +48,19 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
 
-		err = h.storage.SaveShortURL(shortURL, longURL)
+		userID, ok := ctx.Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
+		}
+
+		oneURLInfo := models.URLInfo{
+			UUID:        uuid.New().String(),
+			ShortURL:    shortURL,
+			OriginalURL: longURL,
+			UserID:      userID,
+		}
+
+		err = h.storage.SaveShortURL(ctx, oneURLInfo)
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
@@ -56,6 +77,8 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 
 func (h *URLHandler) shortenJSON() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Reading request body error", http.StatusInternalServerError)
@@ -72,7 +95,19 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		shortURL := urlmaker.MakeShortURL(req.URL)
-		err = h.storage.SaveShortURL(shortURL, req.URL)
+		userID, ok := ctx.Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
+		}
+
+		oneURLInfo := models.URLInfo{
+			UUID:        uuid.New().String(),
+			ShortURL:    shortURL,
+			OriginalURL: req.URL,
+			UserID:      userID,
+		}
+
+		err = h.storage.SaveShortURL(ctx, oneURLInfo)
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
@@ -96,6 +131,8 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 
 func (h *URLHandler) shortenBatch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Reading request body error", http.StatusInternalServerError)
@@ -109,11 +146,18 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 			return
 		}
 
-		for i := range req {
-			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
+		userID, ok := ctx.Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
 
-		err = h.storage.SaveURLs(req)
+		for i := range req {
+			req[i].UUID = uuid.New().String()
+			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
+			req[i].UserID = userID
+		}
+
+		err = h.storage.SaveURLs(ctx, req)
 		if err != nil {
 			http.Error(w, "SaveURLs error", http.StatusInternalServerError)
 			return
@@ -138,9 +182,47 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 	}
 }
 
+func (h *URLHandler) getUsersShorten() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Предположим, что user_id сохранен в контексте под ключом "user_id"
+		userID, ok := ctx.Value("user_id").(string)
+		if !ok {
+			// Обработка случая, когда значение не найдено в контексте или имеет неправильный тип
+		}
+
+		usersURLsInfo, err := h.storage.GetUsersURLs(ctx, userID)
+		if err != nil {
+			http.Error(w, "Get users URLs error", http.StatusInternalServerError)
+		}
+
+		if len(usersURLsInfo) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		resp := make([]models.URLInfo, 0, len(usersURLsInfo))
+		for i := range usersURLsInfo {
+			resp[i].OriginalURL = usersURLsInfo[i].OriginalURL
+			resp[i].ShortURL = fmt.Sprintf("%s/%s", h.BaseURL, usersURLsInfo[i].ShortURL)
+		}
+
+		respB, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Marshal response error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respB)
+	}
+}
+
 func (h *URLHandler) pingDB() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := h.db.DB.Ping(context.Background()); err != nil {
+		ctx := r.Context()
+
+		if err := h.storage.PingDB(ctx); err != nil {
 			http.Error(w, "Ping db", http.StatusInternalServerError)
 			return
 		}
