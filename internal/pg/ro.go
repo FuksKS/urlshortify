@@ -61,5 +61,6 @@ func (r *PgRepo) PingDB(_ context.Context) error {
 
 func (r *PgRepo) Shutdown(_ context.Context) error {
 	r.DB.Close()
+	fmt.Println("Завершил работу с бд")
 	return nil
 }

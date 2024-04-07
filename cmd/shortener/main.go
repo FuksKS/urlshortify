@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -52,7 +53,8 @@ func main() {
 	if err = st.Shutdown(ctx); err != nil {
 		logger.Log.Fatal(err.Error(), zap.String("event", "storage Shutdown"))
 	}
-	
+
+	time.Sleep(2 * time.Second)
 	cancel()
 
 	logger.Log.Info("Terminated. Goodbye")
