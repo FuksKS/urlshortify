@@ -42,7 +42,6 @@ func (c *Cache) SaveURLs(_ context.Context, urls []models.URLInfo) error {
 }
 
 func (c *Cache) ReadAll(_ context.Context) (map[string]models.URLInfo, error) {
-	// Для имплементации
 	return c.Cache, nil
 }
 

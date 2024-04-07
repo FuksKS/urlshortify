@@ -106,5 +106,9 @@ func (s *Storage) PingDB(ctx context.Context) error {
 }
 
 func (s *Storage) Shutdown(ctx context.Context) error {
-	return s.reader.Shutdown(ctx)
+	err := s.reader.Shutdown(ctx)
+	if err != nil {
+		return fmt.Errorf("storage-reader-Shutdown-err: %w", err)
+	}
+	return s.saver.Shutdown(ctx)
 }

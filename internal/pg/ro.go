@@ -54,9 +54,8 @@ func (r *PgRepo) GetLongURL(_ context.Context, _ string) (models.URLInfo, error)
 	return models.URLInfo{}, nil
 }
 
-func (r *PgRepo) PingDB(_ context.Context) error {
-	// Для имплементации
-	return nil
+func (r *PgRepo) PingDB(ctx context.Context) error {
+	return r.DB.Ping(ctx)
 }
 
 func (r *PgRepo) Shutdown(_ context.Context) error {

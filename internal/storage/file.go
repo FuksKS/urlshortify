@@ -120,3 +120,8 @@ func (r *FileReader) Shutdown(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (f *fileWriter) Shutdown(_ context.Context) error {
+	// Для имплементации
+	return nil
+}

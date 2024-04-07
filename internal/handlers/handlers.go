@@ -12,8 +12,6 @@ import (
 	"net/http"
 )
 
-type contextKey string
-
 func (h *URLHandler) getShorten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
