@@ -12,4 +12,5 @@ type saver interface {
 
 type reader interface {
 	Read() (map[string]string, error)
+	GetUsersURLs(userID string) ([]models.URLInfo, error)
 }

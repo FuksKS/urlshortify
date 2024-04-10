@@ -72,6 +72,10 @@ func (s *Storage) GetLongURL(shortURL string) string {
 	return s.Cache[shortURL]
 }
 
+func (s *Storage) GetUsersURLs(userID string) ([]models.URLInfo, error) {
+	return s.reader.GetUsersURLs(userID)
+}
+
 func (s *Storage) SaveCache() error {
 	if err := s.saver.Save(s.Cache); err != nil {
 		return fmt.Errorf("storage-SaveCache-Save-err: %w", err)

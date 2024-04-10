@@ -22,7 +22,7 @@ func New(st Storager, db pg.PgRepo, baseURL string) (*URLHandler, error) {
 func (h *URLHandler) InitRouter() chi.Router {
 
 	r := chi.NewRouter()
-	r.Use(withLogging, withGzip)
+	r.Use(withLogging, WithAuth, withGzip)
 
 	r.Post("/", h.shorten())
 	r.Get("/{id}", h.getShorten())

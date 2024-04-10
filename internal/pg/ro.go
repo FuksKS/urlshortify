@@ -30,3 +30,21 @@ func (r *PgRepo) Read() (map[string]string, error) {
 
 	return m, nil
 }
+
+func (r *PgRepo) GetUsersURLs(userID string) ([]models.URLInfo, error) {
+	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := r.DB.Query(ctx2, getUsersURLsQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("PgRepo-GetUsersURLs-Query-err: %w", err)
+	}
+	defer rows.Close()
+
+	urlsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.URLInfo])
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, fmt.Errorf("PgRepo-GetUsersURLs-CollectRows-err: %w", err)
+	}
+
+	return urlsInfo, nil
+}

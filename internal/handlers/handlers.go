@@ -138,6 +138,42 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 	}
 }
 
+func (h *URLHandler) getUsersShorten() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// userID сохранен в контексте под ключом "user_id"
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
+		if !ok {
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
+		}
+
+		usersURLsInfo, err := h.storage.GetUsersURLs(string(userID))
+		if err != nil {
+			http.Error(w, "Get users URLs error", http.StatusInternalServerError)
+		}
+
+		if len(usersURLsInfo) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		resp := make([]models.URLInfo, 0, len(usersURLsInfo))
+		for i := range usersURLsInfo {
+			resp[i].OriginalURL = usersURLsInfo[i].OriginalURL
+			resp[i].ShortURL = fmt.Sprintf("%s/%s", h.BaseURL, usersURLsInfo[i].ShortURL)
+		}
+
+		respB, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Marshal response error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respB)
+	}
+}
+
 func (h *URLHandler) pingDB() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h.db.DB.Ping(context.Background()); err != nil {

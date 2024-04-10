@@ -105,3 +105,8 @@ func (r *FileReader) Read() (map[string]string, error) {
 
 	return m, nil
 }
+
+func (r *FileReader) GetUsersURLs(_ string) ([]models.URLInfo, error) {
+	// Для имплементации. Забираем урлы по юзеру всегда из бд
+	return nil, nil
+}
