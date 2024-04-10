@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
@@ -127,6 +128,10 @@ func Test_shorten(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
+
+			ctx := context.WithValue(context.Background(), models.UserIDKey, models.ContextKey("1"))
+			request = request.WithContext(ctx)
+
 			w := httptest.NewRecorder()
 			h := handler.shorten()
 			h(w, request)
@@ -196,7 +201,12 @@ func Test_getShorten(t *testing.T) {
 		},
 	}
 
-	handler.storage.SaveShortURL(urlmaker.MakeShortURL(practicumHost), practicumHost)
+	info := models.URLInfo{
+		ShortURL:    urlmaker.MakeShortURL(practicumHost),
+		OriginalURL: practicumHost,
+	}
+
+	handler.storage.SaveShortURL(info)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -207,7 +217,8 @@ func Test_getShorten(t *testing.T) {
 
 			// Установка объекта RouteContext в контекст запроса чтоб можно было достать параметр id
 			ctx := context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
-			request = request.WithContext(ctx)
+			ctx2 := context.WithValue(ctx, models.UserIDKey, models.ContextKey("1"))
+			request = request.WithContext(ctx2)
 
 			w := httptest.NewRecorder()
 			h := handler.getShorten()
@@ -260,6 +271,9 @@ func Test_shortenJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			ctx := context.WithValue(context.Background(), models.UserIDKey, models.ContextKey("1"))
+			request = request.WithContext(ctx)
+
 			w := httptest.NewRecorder()
 			h := handler.shortenJSON()
 			h(w, request)
