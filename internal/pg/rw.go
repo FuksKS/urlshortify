@@ -41,7 +41,7 @@ func (r *PgRepo) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
 	defer tx.Rollback(ctx2)
 
 	for i := range urls {
-		_, err := tx.Exec(ctx2, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
+		_, err := tx.Exec(ctx2, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL, urls[i].UserID)
 		if err != nil {
 			tx.Rollback(ctx2)
 			return fmt.Errorf("SaveURLs-saveOneURLQuery-Exec-err: %w", err)
