@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
@@ -155,7 +156,7 @@ func Test_getShorten(t *testing.T) {
 		location   string
 	}
 
-	s, _ := storage.New(pg.PgRepo{}, defaultFilePath)
+	s, _ := storage.New(pg.PgRepo{nil}, defaultFilePath)
 	handler := URLHandler{
 		storage: s,
 		BaseURL: defaultBaseURL,
@@ -214,10 +215,10 @@ func Test_getShorten(t *testing.T) {
 			routeCtx := chi.NewRouteContext()
 			routeCtx.URLParams.Add("id", tt.request)
 
-			// Установка объекта RouteContext в контекст запроса чтоб можно было достать параметр id
-			//ctx := context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
+			//Установка объекта RouteContext в контекст запроса чтоб можно было достать параметр id
+			ctx := context.WithValue(request.Context(), chi.RouteCtxKey, routeCtx)
 			//ctx2 := context.WithValue(ctx, models.UserIDKey, models.ContextKey("1"))
-			//request = request.WithContext(ctx2)
+			request = request.WithContext(ctx)
 
 			w := httptest.NewRecorder()
 			h := handler.getShorten()
