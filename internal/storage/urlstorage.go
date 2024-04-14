@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
-	"github.com/google/uuid"
 	"sync"
 )
 
@@ -44,14 +43,14 @@ func New(db pg.PgRepo, filePath string) (*Storage, error) {
 	return st, nil
 }
 
-func (s *Storage) SaveShortURL(shortURL, longURL string) error {
-	if _, ok := s.Cache[shortURL]; !ok {
+func (s *Storage) SaveShortURL(info models.URLInfo) error {
+	if _, ok := s.Cache[info.ShortURL]; !ok {
 		s.mapRWMutex.Lock()
-		s.Cache[shortURL] = longURL
+		s.Cache[info.ShortURL] = info.OriginalURL
 		s.mapRWMutex.Unlock()
 	}
 
-	err := s.saver.SaveOneURL(models.URLInfo{UUID: uuid.New().String(), ShortURL: shortURL, OriginalURL: longURL})
+	err := s.saver.SaveOneURL(info)
 
 	return err
 }

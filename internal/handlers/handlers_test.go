@@ -3,10 +3,12 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/pg"
 	"github.com/FuksKS/urlshortify/internal/storage"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -196,7 +198,9 @@ func Test_getShorten(t *testing.T) {
 		},
 	}
 
-	handler.storage.SaveShortURL(urlmaker.MakeShortURL(practicumHost), practicumHost)
+	id := uuid.New().String()
+	userId := "1"
+	handler.storage.SaveShortURL(models.URLInfo{UUID: id, ShortURL: urlmaker.MakeShortURL(practicumHost), OriginalURL: practicumHost, UserID: userId})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

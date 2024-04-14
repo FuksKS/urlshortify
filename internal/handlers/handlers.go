@@ -8,6 +8,7 @@ import (
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 )
@@ -38,8 +39,11 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 
 		longURL := string(body)
 		shortURL := urlmaker.MakeShortURL(longURL)
+		userId := "1"
+		id := uuid.New().String()
 
-		err = h.storage.SaveShortURL(shortURL, longURL)
+		err = h.storage.SaveShortURL(models.URLInfo{UUID: id, ShortURL: shortURL, OriginalURL: longURL, UserID: userId})
+
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
@@ -72,7 +76,10 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		shortURL := urlmaker.MakeShortURL(req.URL)
-		err = h.storage.SaveShortURL(shortURL, req.URL)
+		userId := "1"
+		id := uuid.New().String()
+
+		err = h.storage.SaveShortURL(models.URLInfo{UUID: id, ShortURL: shortURL, OriginalURL: req.URL, UserID: userId})
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
@@ -109,8 +116,11 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 			return
 		}
 
+		userId := "1"
+
 		for i := range req {
 			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
+			req[i].UserID = userId
 		}
 
 		err = h.storage.SaveURLs(req)

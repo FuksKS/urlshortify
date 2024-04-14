@@ -42,7 +42,7 @@ func (r *PgRepo) SaveOneURL(info models.URLInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL)
+	commandTag, err := r.DB.Exec(ctx, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL, info.UserID)
 	if err != nil {
 		return fmt.Errorf("SaveOneURL-Exec-err: %w", err)
 	}
@@ -67,7 +67,7 @@ func (r *PgRepo) SaveURLs(urls []models.URLInfo) error {
 	defer tx.Rollback(ctx)
 
 	for i := range urls {
-		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL)
+		_, err := tx.Exec(ctx, saveOneURLQuery, urls[i].UUID, urls[i].ShortURL, urls[i].OriginalURL, urls[i].UserID)
 		if err != nil {
 			tx.Rollback(ctx)
 			return fmt.Errorf("SaveURLs-saveOneURLQuery-Exec-err: %w", err)
