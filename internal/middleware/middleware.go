@@ -112,7 +112,12 @@ func (r *authResponseWriter) Write(b []byte) (int, error) {
 
 	logger.Log.Info("WithAuth middleware. Write with cookie", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
 
-	return r.ResponseWriter.Write(b)
+	size, err := r.ResponseWriter.Write(b)
+
+	// тупо, но других вариантов нет
+	http.SetCookie(r.ResponseWriter, &cookie)
+	logger.Log.Info("WithAuth middleware. Write with cookie. Поставил еще раз", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
+	return size, err
 }
 
 func (r *authResponseWriter) WriteHeader(statusCode int) {
