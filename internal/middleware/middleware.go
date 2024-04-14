@@ -1,12 +1,19 @@
-package handlers
+package middleware
 
 import (
+	"context"
+	"errors"
 	"github.com/FuksKS/urlshortify/internal/logger"
+	"github.com/FuksKS/urlshortify/internal/models"
+	"github.com/FuksKS/urlshortify/internal/token"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
 )
+
+const cookieName = "authToken"
 
 type (
 	responseData struct {
@@ -31,8 +38,8 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-// withLogging — middleware-логер для входящих HTTP-запросов.
-func withLogging(h http.Handler) http.Handler {
+// WithLogging — middleware-логер для входящих HTTP-запросов.
+func WithLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -59,8 +66,8 @@ func withLogging(h http.Handler) http.Handler {
 	})
 }
 
-// withGzip - middleware поддерживающий gzip компрессию и декомпрессию
-func withGzip(h http.Handler) http.Handler {
+// WithGzip - middleware поддерживающий gzip компрессию и декомпрессию
+func WithGzip(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
@@ -86,5 +93,64 @@ func withGzip(h http.Handler) http.Handler {
 
 		h.ServeHTTP(ow, r)
 
+	})
+}
+
+type authResponseWriter struct {
+	http.ResponseWriter
+	UserID string
+}
+
+func (r *authResponseWriter) Write(b []byte) (int, error) {
+	authToken, err := token.MakeAuthToken(r.UserID)
+	if err != nil {
+		return 0, err
+	}
+
+	cookie := http.Cookie{Name: cookieName, Value: authToken}
+	http.SetCookie(r.ResponseWriter, &cookie)
+
+	return r.ResponseWriter.Write(b)
+}
+
+func (r *authResponseWriter) WriteHeader(statusCode int) {
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+// WithAuth - middleware авторизации
+func WithAuth(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenWithUser, err := r.Cookie("authToken")
+		if err != nil && !errors.Is(err, http.ErrNoCookie) {
+			http.Error(w, "Get cookie error", http.StatusInternalServerError)
+		}
+
+		var userID string
+		if tokenWithUser != nil {
+			if tokenWithUser.Value != "" {
+				userID, err = token.GetUserID(tokenWithUser.Value)
+				if err != nil {
+					http.Error(w, "Get userID from token error", http.StatusInternalServerError)
+				}
+				if userID == "" {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				}
+			}
+		}
+
+		if userID == "" {
+			userID = uuid.New().String()
+		}
+
+		aw := authResponseWriter{
+			ResponseWriter: w,
+			UserID:         userID,
+		}
+
+		userForContext := models.ContextKey(userID)
+		ctx := context.WithValue(r.Context(), models.UserIDKey, userForContext)
+		r = r.WithContext(ctx)
+
+		h.ServeHTTP(&aw, r)
 	})
 }
