@@ -15,7 +15,7 @@ create table if not exists shortener
     id           text not null,
     short_url    text not null,
     original_url text not null primary key,
-	user_id 	 text not null
+    user_id      text not null default 0
 );
 `
 
