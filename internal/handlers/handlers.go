@@ -152,7 +152,6 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 		}
 
 		for i := range req {
-			req[i].UUID = uuid.New().String()
 			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
 			req[i].UserID = string(userID)
 		}
