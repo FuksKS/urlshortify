@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/FuksKS/urlshortify/internal/logger"
 	"github.com/FuksKS/urlshortify/internal/models"
 	"github.com/FuksKS/urlshortify/internal/urlmaker"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 )
@@ -60,6 +62,7 @@ func (h *URLHandler) shorten() http.HandlerFunc {
 			UserID:      string(userID),
 		}
 
+		logger.Log.Info("Сохранение в базу из shorten()", zap.String("user_id", string(userID)), zap.String("short URL", shortURL), zap.String("original URL", longURL))
 		err = h.storage.SaveShortURL(ctx, oneURLInfo)
 		if err != nil && errors.Is(err, models.ErrAffectNoRows) {
 			w.WriteHeader(http.StatusConflict)
@@ -100,6 +103,7 @@ func (h *URLHandler) shortenJSON() http.HandlerFunc {
 			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
 
+		logger.Log.Info("Сохранение в базу из shortenJSON()", zap.String("user_id", string(userID)), zap.String("short URL", shortURL), zap.String("original URL", req.URL))
 		oneURLInfo := models.URLInfo{
 			UUID:        uuid.New().String(),
 			ShortURL:    shortURL,
@@ -154,6 +158,8 @@ func (h *URLHandler) shortenBatch() http.HandlerFunc {
 		for i := range req {
 			req[i].ShortURL = urlmaker.MakeShortURL(req[i].OriginalURL)
 			req[i].UserID = string(userID)
+
+			logger.Log.Info("Сохранение в базу из shortenBatch()", zap.String("user_id", string(userID)), zap.String("short URL", req[i].ShortURL), zap.String("original URL", req[i].OriginalURL))
 		}
 
 		err = h.storage.SaveURLs(ctx, req)
@@ -190,6 +196,8 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 		if !ok {
 			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
 		}
+
+		logger.Log.Info("Достаем из база с getUsersShorten()", zap.String("user_id", string(userID)))
 
 		usersURLsInfo, err := h.storage.GetUsersURLs(ctx, string(userID))
 		if err != nil {

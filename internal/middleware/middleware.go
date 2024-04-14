@@ -140,6 +140,9 @@ func WithAuth(h http.Handler) http.Handler {
 
 		if userID == "" {
 			userID = uuid.New().String()
+			logger.Log.Info("Неизвестный юзер. Новый ID", zap.String("user_id", userID))
+		} else {
+			logger.Log.Info("Известный юзер. Старый ID", zap.String("user_id", userID))
 		}
 
 		aw := authResponseWriter{
