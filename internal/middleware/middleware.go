@@ -110,6 +110,8 @@ func (r *authResponseWriter) Write(b []byte) (int, error) {
 	cookie := http.Cookie{Name: cookieName, Value: authToken}
 	http.SetCookie(r.ResponseWriter, &cookie)
 
+	logger.Log.Info("WithAuth middleware. Write with cookie", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
+
 	return r.ResponseWriter.Write(b)
 }
 
@@ -121,6 +123,17 @@ func (r *authResponseWriter) WriteHeader(statusCode int) {
 func WithAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenWithUser, err := r.Cookie("authToken")
+
+		if tokenWithUser != nil {
+			logger.Log.Info("WithAuth middleware. tokenWithUser != nil", zap.String(" tokenWithUser.Value", tokenWithUser.Value))
+		} else {
+			logger.Log.Info("WithAuth middleware. tokenWithUser == nil")
+		}
+
+		if err != nil {
+			logger.Log.Info("WithAuth middleware. err from r.Cookie() != nil", zap.String("error: ", err.Error()))
+		}
+
 		if err != nil && !errors.Is(err, http.ErrNoCookie) {
 			http.Error(w, "Get cookie error", http.StatusInternalServerError)
 		}
