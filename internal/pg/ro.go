@@ -9,7 +9,7 @@ import (
 )
 
 func (r *PgRepo) ReadAll(ctx context.Context) (map[string]models.URLInfo, error) {
-	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.Query(ctx2, getAllURLsQuery)
@@ -32,7 +32,7 @@ func (r *PgRepo) ReadAll(ctx context.Context) (map[string]models.URLInfo, error)
 }
 
 func (r *PgRepo) GetUsersURLs(ctx context.Context, userID string) ([]models.URLInfo, error) {
-	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.Query(ctx2, getUsersURLsQuery, userID)

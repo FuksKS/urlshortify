@@ -13,7 +13,7 @@ func (r *PgRepo) Save(_ context.Context, _ map[string]models.URLInfo) error {
 }
 
 func (r *PgRepo) SaveOneURL(ctx context.Context, info models.URLInfo) error {
-	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	commandTag, err := r.DB.Exec(ctx2, saveOneURLQuery, info.UUID, info.ShortURL, info.OriginalURL, info.UserID)
@@ -30,7 +30,7 @@ func (r *PgRepo) SaveOneURL(ctx context.Context, info models.URLInfo) error {
 }
 
 func (r *PgRepo) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
-	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	tx, err := r.DB.Begin(ctx2)
