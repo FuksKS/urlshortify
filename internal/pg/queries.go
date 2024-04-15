@@ -8,30 +8,28 @@ SELECT EXISTS (SELECT FROM pg_database WHERE datname = 'shortener');
 	createDBQuery = `
 CREATE DATABASE shortener
 `
+
 	createTableQuery = `
 create table if not exists shortener
 (
     id           text not null,
     short_url    text not null,
-    original_url text not null primary key
+    original_url text not null primary key,
+    user_id      text not null default 0
 );
 `
+
 	getAllURLsQuery = `
-select short_url, original_url from shortener
+select id, short_url, original_url, user_id from shortener;
 `
-	saveCashQuery = `
-insert into shortener (short_url, original_url)
-select
-    url_info.short_url,
-    url_info.original_url
-    from jsonb_to_recordset($1::jsonb) as url_info (
-                                                  "short_url" text,
-                                                  "original_url" text
-        ) on conflict do nothing;
-`
+
 	saveOneURLQuery = `
-insert into shortener (id, short_url, original_url)
-values ($1, $2, $3)
+insert into shortener (id, short_url, original_url, user_id)
+values ($1, $2, $3, $4)
 on conflict do nothing;
+`
+
+	getUsersURLsQuery = `
+select id, short_url, original_url, user_id from shortener where user_id = $1;
 `
 )
