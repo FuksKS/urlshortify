@@ -101,6 +101,15 @@ func (s *Storage) SaveCache(ctx context.Context) error {
 	return nil
 }
 
+func (s *Storage) DeleteURLs(ctx context.Context, deleteURLs []models.DeleteURLs) error {
+	err := s.cacheSaver.DeleteURLs(ctx, deleteURLs)
+	if err != nil {
+		return err
+	}
+
+	return s.saver.DeleteURLs(ctx, deleteURLs)
+}
+
 func (s *Storage) PingDB(ctx context.Context) error {
 	return s.reader.PingDB(ctx)
 }

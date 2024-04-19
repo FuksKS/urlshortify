@@ -63,3 +63,18 @@ func (c *Cache) Shutdown(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (c *Cache) DeleteURLs(_ context.Context, deleteURLs []models.DeleteURLs) error {
+	for key, info := range c.Cache {
+		for i := range deleteURLs {
+			for j := range deleteURLs[i].URLs {
+				if info.ShortURL == deleteURLs[i].URLs[j] && info.UserID == deleteURLs[i].UserID {
+					localInfo := c.Cache[key]
+					localInfo.IsDeleted = true
+					c.Cache[key] = localInfo
+				}
+			}
+		}
+	}
+	return nil
+}

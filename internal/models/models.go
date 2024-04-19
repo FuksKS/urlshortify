@@ -21,4 +21,10 @@ type URLInfo struct {
 	ShortURL    string `json:"short_url,omitempty"`
 	OriginalURL string `json:"original_url,omitempty"`
 	UserID      string `json:"user_id,omitempty"`
+	IsDeleted   bool   `json:"is_deleted,omitempty"`
+}
+
+type DeleteURLs struct {
+	URLs   []string `json:"urls"`
+	UserID string   `json:"user_id"`
 }

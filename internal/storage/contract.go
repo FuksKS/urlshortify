@@ -9,6 +9,7 @@ type saver interface {
 	Save(ctx context.Context, cache map[string]models.URLInfo) error
 	SaveOneURL(ctx context.Context, info models.URLInfo) error
 	SaveURLs(ctx context.Context, urls []models.URLInfo) error
+	DeleteURLs(ctx context.Context, deleteURLs []models.DeleteURLs) error
 	Shutdown(ctx context.Context) error
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,33 @@ func (r *PgRepo) SaveURLs(ctx context.Context, urls []models.URLInfo) error {
 	err = tx.Commit(ctx2)
 	if err != nil {
 		return fmt.Errorf("SaveURLs-Commit-err: %w", err)
+	}
+
+	return nil
+}
+
+func (r *PgRepo) DeleteURLs(ctx context.Context, deleteURLs []models.DeleteURLs) error {
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	var values []string
+	var args []any
+
+	for i, url := range deleteURLs {
+		var params string
+		// в нашем запросе по 2 параметра на каждую структуру
+		base := i * 2
+		params += fmt.Sprintf("(short_url = any($%d) and user_id = $%d)", base+1, base+2)
+
+		values = append(values, params)
+		args = append(args, url.URLs, url.UserID)
+	}
+
+	query := deleteURLsBeginQuery + strings.Join(values, " or ") + `;`
+
+	_, err := r.DB.Exec(ctx2, query, args...)
+	if err != nil {
+		return fmt.Errorf("DeleteURLs-deleteURLsQuery-Exec-err: %w", err)
 	}
 
 	return nil

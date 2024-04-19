@@ -120,3 +120,8 @@ func (f *fileWriter) Shutdown(_ context.Context) error {
 	// Для имплементации
 	return nil
 }
+
+func (f *fileWriter) DeleteURLs(_ context.Context, _ []models.DeleteURLs) error {
+	// Для имплементации
+	return nil
+}

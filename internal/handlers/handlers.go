@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"time"
 )
 
 func (h *URLHandler) getShorten() http.HandlerFunc {
@@ -23,6 +25,11 @@ func (h *URLHandler) getShorten() http.HandlerFunc {
 		oneURLInfo, err := h.storage.GetLongURL(ctx, id)
 		if err != nil {
 			http.Error(w, "GetLongURL error", http.StatusInternalServerError)
+		}
+
+		if oneURLInfo.IsDeleted {
+			w.WriteHeader(http.StatusGone)
+			return
 		}
 
 		if oneURLInfo.OriginalURL != "" {
@@ -222,6 +229,68 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 		}
 
 		w.Write(respB)
+	}
+}
+
+func (h *URLHandler) deleteShortenBatch() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		userID, ok := ctx.Value(models.UserIDKey).(models.ContextKey)
+		if !ok {
+			http.Error(w, "Get user_id from context error", http.StatusInternalServerError)
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Reading request body error", http.StatusInternalServerError)
+			return
+		}
+
+		var shortURLs []string
+		err = json.Unmarshal(body, &shortURLs)
+		if err != nil {
+			http.Error(w, "Unmarshal body error", http.StatusInternalServerError)
+			return
+		}
+
+		// отправим сообщение в очередь на сохранение
+		h.DeleteURLChan <- models.DeleteURLs{
+			URLs:   shortURLs,
+			UserID: string(userID),
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+// flushMessages постоянно дропает несколько отправленных урлов в хранилище с определённым интервалом
+func (h *URLHandler) flushDeleteURLs() {
+	// будем дропать урлы, накопленные за последние 10 секунд
+	ticker := time.NewTicker(10 * time.Second)
+
+	var deleteURLs []models.DeleteURLs
+
+	for {
+		select {
+		case urls := <-h.DeleteURLChan:
+			// добавим урлы в слайс для последующего сохранения
+			deleteURLs = append(deleteURLs, urls)
+		case <-ticker.C:
+			// подождём, пока придёт хотя бы одно сообщение
+			if len(deleteURLs) == 0 {
+				continue
+			}
+			// дропнем все пришедшие урлы одновременно
+			err := h.storage.DeleteURLs(context.Background(), deleteURLs)
+			if err != nil {
+				logger.Log.Error("cannot DeleteURLs", zap.Error(err))
+				// не будем стирать сообщения, попробуем отправить их чуть позже
+				continue
+			}
+			// сотрём успешно дропнутые урлы
+			deleteURLs = nil
+		}
 	}
 }
 
