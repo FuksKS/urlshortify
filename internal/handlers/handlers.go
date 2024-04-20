@@ -216,7 +216,7 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 			return
 		}
 
-		resp := make([]models.URLInfo, 0, len(usersURLsInfo))
+		resp := make([]models.URLInfo, len(usersURLsInfo))
 		for i := range usersURLsInfo {
 			resp[i].OriginalURL = usersURLsInfo[i].OriginalURL
 			resp[i].ShortURL = fmt.Sprintf("%s/%s", h.BaseURL, usersURLsInfo[i].ShortURL)
