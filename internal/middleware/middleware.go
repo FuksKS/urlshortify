@@ -102,25 +102,22 @@ type authResponseWriter struct {
 }
 
 func (r *authResponseWriter) Write(b []byte) (int, error) {
+	return r.ResponseWriter.Write(b)
+}
+
+func (r *authResponseWriter) WriteHeader(statusCode int) {
 	authToken, err := token.MakeAuthToken(r.UserID)
 	if err != nil {
-		return 0, err
+		logger.Log.Error("WithAuth middleware. WriteHeader MakeAuthToken error", zap.String("error: ", err.Error()), zap.String("UserID: ", r.UserID))
 	}
 
 	cookie := http.Cookie{Name: cookieName, Value: authToken}
 	http.SetCookie(r.ResponseWriter, &cookie)
 
-	logger.Log.Info("WithAuth middleware. Write with cookie", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
+	logger.Log.Info("WithAuth middleware. WriteHeader with cookie", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
 
-	size, err := r.ResponseWriter.Write(b)
-
-	// тупо, но других вариантов нет
 	http.SetCookie(r.ResponseWriter, &cookie)
-	logger.Log.Info("WithAuth middleware. Write with cookie. Поставил еще раз", zap.String("cookie name: ", cookie.Name), zap.String("cookie value: ", cookie.Value))
-	return size, err
-}
 
-func (r *authResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 
