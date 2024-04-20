@@ -234,7 +234,9 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 
-		w.Write(respB)
+		if _, err = w.Write(respB); err != nil {
+			logger.Log.Error("getUsersShorten() не записали ответ", zap.String("error ", err.Error()))
+		}
 	}
 }
 
