@@ -230,6 +230,8 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 			return
 		}
 
+		logger.Log.Info("getUsersShorten() отправляем ответ:", zap.String("respB", string(respB)))
+
 		w.Write(respB)
 	}
 }
