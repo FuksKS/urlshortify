@@ -232,6 +232,8 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 
 		logger.Log.Info("getUsersShorten() отправляем ответ:", zap.String("respB", string(respB)))
 
+		w.WriteHeader(http.StatusOK)
+
 		w.Write(respB)
 	}
 }
