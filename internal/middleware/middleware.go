@@ -102,6 +102,7 @@ type authResponseWriter struct {
 }
 
 func (r *authResponseWriter) Write(b []byte) (int, error) {
+	logger.Log.Info("WithAuth middleware. Write", zap.String("Ща запишу тело ответа ", string(b)))
 	return r.ResponseWriter.Write(b)
 }
 
