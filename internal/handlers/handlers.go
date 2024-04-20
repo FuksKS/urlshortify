@@ -212,9 +212,11 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 		}
 
 		if len(usersURLsInfo) == 0 {
+			logger.Log.Info("Достали из базы с getUsersShorten() 0 урлов", zap.String("user_id", string(userID)))
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+		logger.Log.Info("Достали из базы с getUsersShorten() нулевой короткий урл", zap.String("user_id", string(userID)), zap.String("short_url", usersURLsInfo[0].ShortURL))
 
 		resp := make([]models.URLInfo, len(usersURLsInfo))
 		for i := range usersURLsInfo {

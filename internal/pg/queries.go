@@ -25,13 +25,13 @@ select id, short_url, original_url, user_id from shortener;
 `
 
 	saveOneURLQuery = `
-insert into shortener (id, short_url, original_url, user_id)
-values ($1, $2, $3, $4)
+insert into shortener (id, short_url, original_url, user_id, is_deleted)
+values ($1, $2, $3, $4, false)
 on conflict do nothing;
 `
 
 	getUsersURLsQuery = `
-select id, short_url, original_url, user_id from shortener where user_id = $1;
+select id, short_url, original_url, user_id, is_deleted from shortener where user_id = $1;
 `
 
 	deleteURLsBeginQuery = `
