@@ -232,6 +232,7 @@ func (h *URLHandler) getUsersShorten() http.HandlerFunc {
 
 		logger.Log.Info("getUsersShorten() отправляем ответ:", zap.String("respB", string(respB)))
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
 		if _, err = w.Write(respB); err != nil {
