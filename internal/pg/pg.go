@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"time"
@@ -12,9 +13,14 @@ type PgRepo struct {
 }
 
 func NewConnect(ctx context.Context, dbDSN string) (PgRepo, error) {
-	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	if dbDSN == "" {
+		return PgRepo{}, nil
+	}
+
+	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	fmt.Println("Запускаю бд")
 	config, err := pgxpool.ParseConfig(dbDSN)
 	if err != nil {
 		return PgRepo{}, err

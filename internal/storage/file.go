@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/FuksKS/urlshortify/internal/models"
@@ -23,12 +24,13 @@ func newFileWriter(filename string) (*fileWriter, error) {
 	return &fileWriter{file: file, writer: bufio.NewWriter(file)}, nil
 }
 
-func (f *fileWriter) Save(cache map[string]string) error {
-	for shortURL, longURL := range cache {
+func (f *fileWriter) Save(_ context.Context, cache map[string]models.URLInfo) error {
+	for shortURL, info := range cache {
 		data := models.URLInfo{
 			UUID:        uuid.New().String(),
 			ShortURL:    shortURL,
-			OriginalURL: longURL,
+			OriginalURL: info.OriginalURL,
+			UserID:      info.UserID,
 		}
 
 		dataByte, err := json.Marshal(&data)
@@ -54,12 +56,12 @@ func (f *fileWriter) Save(cache map[string]string) error {
 	return nil
 }
 
-func (f *fileWriter) SaveURLs(urls []models.URLInfo) error {
+func (f *fileWriter) SaveURLs(_ context.Context, _ []models.URLInfo) error {
 	// В файл построчно не сохраняем. Метод просто для имплиментации интерфейса
 	return nil
 }
 
-func (f *fileWriter) SaveOneURL(info models.URLInfo) error {
+func (f *fileWriter) SaveOneURL(_ context.Context, _ models.URLInfo) error {
 	// В файл построчно не сохраняем. Метод просто для имплиментации интерфейса
 	return nil
 }
@@ -81,16 +83,9 @@ func newFileReader(filePath string) (*FileReader, error) {
 	}, nil
 }
 
-func (r *FileReader) Read() (map[string]string, error) {
-	/*
-		if !fileConsumer.scanner.Scan() {
-			fmt.Println(" !fileConsumer.scanner.Scan()")
-			return nil, fileConsumer.scanner.Err()
-		}
+func (r *FileReader) ReadAll(_ context.Context) (map[string]models.URLInfo, error) {
 
-	*/
-
-	m := make(map[string]string)
+	m := make(map[string]models.URLInfo)
 	for r.scanner.Scan() {
 		line := r.scanner.Text()
 
@@ -100,8 +95,33 @@ func (r *FileReader) Read() (map[string]string, error) {
 			return nil, fmt.Errorf("storage-FileReader-Unmarshal-err: %w", err)
 		}
 
-		m[info.ShortURL] = info.OriginalURL
+		m[info.ShortURL] = info
 	}
 
 	return m, nil
+}
+
+func (r *FileReader) GetLongURL(_ context.Context, _ string) (models.URLInfo, error) {
+	// Для имплементации. Один урл берем только из кэша
+	return models.URLInfo{}, nil
+}
+
+func (r *FileReader) GetUsersURLs(_ context.Context, _ string) ([]models.URLInfo, error) {
+	// Для имплементации. Забираем урлы по юзеру всегда из бд
+	return nil, nil
+}
+
+func (r *FileReader) PingDB(_ context.Context) error {
+	// Для имплементации
+	return nil
+}
+
+func (f *fileWriter) Shutdown(_ context.Context) error {
+	// Для имплементации
+	return nil
+}
+
+func (f *fileWriter) DeleteURLs(_ context.Context, _ []models.DeleteURLs) error {
+	// Для имплементации
+	return nil
 }
