@@ -139,23 +139,25 @@ func WithAuth(h http.Handler) http.Handler {
 
 		if err != nil && !errors.Is(err, http.ErrNoCookie) {
 			http.Error(w, "Get cookie error", http.StatusInternalServerError)
+			return
 		}
 
 		var userID string
-		if tokenWithUser != nil {
-			if tokenWithUser.Value != "" {
-				logger.Log.Info("WithAuth middleware. tokenWithUser.Value != ''", zap.String(" tokenWithUser.Value: ", tokenWithUser.Value))
-				userID, err = token.GetUserID(tokenWithUser.Value)
-				logger.Log.Info("WithAuth middleware. token.GetUserID", zap.String("userID: ", userID))
-				if err != nil {
-					http.Error(w, "Get userID from token error", http.StatusInternalServerError)
-				}
-				if userID == "" {
-					http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				}
-			} else {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		if tokenWithUser.Value != "" {
+			logger.Log.Info("WithAuth middleware. tokenWithUser.Value != ''", zap.String(" tokenWithUser.Value: ", tokenWithUser.Value))
+			userID, err = token.GetUserID(tokenWithUser.Value)
+			logger.Log.Info("WithAuth middleware. token.GetUserID", zap.String("userID: ", userID))
+			if err != nil {
+				http.Error(w, "Get userID from token error", http.StatusInternalServerError)
+				return
 			}
+			if userID == "" {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		} else {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
 		}
 
 		if userID == "" {
